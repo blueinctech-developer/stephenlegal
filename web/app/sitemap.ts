@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/config";
-import { getAllPostEntries, getCategories } from "@/lib/wp";
+import { getAllPostEntries, getCategories } from "@/lib/data";
 
 export const revalidate = 3600;
 

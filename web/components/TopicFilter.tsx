@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { useMemo, useState } from "react";
-import type { PostSummary } from "@/lib/wp";
+import type { PostSummary } from "@/lib/data";
 import { Card } from "./Card";
 
 const SHOWN = 5;

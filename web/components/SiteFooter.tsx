@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { DISCLAIMER, PUBLICATION_LINKS, SITE_NAME, SOCIAL } from "@/lib/config";
-import type { Term } from "@/lib/wp";
+import type { Term } from "@/lib/data";
 
 export function SiteFooter({ topics }: { topics: Term[] }) {
 	return (

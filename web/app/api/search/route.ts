@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getPosts } from "@/lib/wp";
+import { getPosts } from "@/lib/data";
 
 /** Quick results for the search dialog. Public data only; responses are cached briefly. */
 export async function GET(request: NextRequest) {

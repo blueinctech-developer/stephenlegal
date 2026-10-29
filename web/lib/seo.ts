@@ -1,40 +1,76 @@
 import type { Metadata } from "next";
-import { SITE_NAME, SITE_URL } from "./config";
-import type { YoastHead } from "./wp";
+import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "./config";
+import type { Post, Seo } from "./data";
 
-/**
- * Metadata from Yoast's head data (kept as the editors wrote it), with sensible
- * fallbacks for archives and pages Yoast doesn't describe.
- */
-export function seoMetadata(seo: YoastHead | null, fallback: { title: string; description?: string; path: string; image?: string | null }): Metadata {
-	const canonical = seo?.canonical || `${SITE_URL}${fallback.path}`;
+type Fallback = { title: string; description?: string; path: string; image?: string | null; article?: { published: string; modified: string } };
+
+/** Page metadata: the editor's search title/description when set, otherwise sensible defaults. */
+export function seoMetadata(seo: Seo | null, fallback: Fallback): Metadata {
+	const canonical = `${SITE_URL}${fallback.path}`;
 	const title = seo?.title || `${fallback.title} - ${SITE_NAME}`;
-	const description = seo?.description || seo?.og_description || fallback.description;
-	const images = seo?.og_image?.length ? seo.og_image.map((i) => ({ url: i.url, width: i.width, height: i.height })) : fallback.image ? [{ url: fallback.image }] : undefined;
-	const noindex = seo?.robots?.index === "noindex";
+	const description = seo?.description || fallback.description || undefined;
+	const images = fallback.image ? [{ url: fallback.image }] : undefined;
 
 	return {
 		title: { absolute: title },
 		description,
 		alternates: { canonical },
-		robots: noindex ? { index: false, follow: true } : undefined,
 		openGraph: {
-			title: seo?.og_title || fallback.title,
-			description: seo?.og_description || description,
+			title: seo?.title || fallback.title,
+			description,
 			url: canonical,
 			siteName: SITE_NAME,
-			type: seo?.og_type === "article" ? "article" : "website",
+			type: fallback.article ? "article" : "website",
 			images,
-			...(seo?.og_type === "article" && {
-				publishedTime: seo.article_published_time,
-				modifiedTime: seo.article_modified_time,
-			}),
+			...(fallback.article && { publishedTime: fallback.article.published, modifiedTime: fallback.article.modified }),
 		},
-		twitter: { card: "summary_large_image", title: seo?.og_title || fallback.title, description: seo?.og_description || description, images: images?.map((i) => i.url) },
+		twitter: { card: "summary_large_image", title: seo?.title || fallback.title, description, images: images?.map((i) => i.url) },
 	};
 }
 
-/** Yoast's schema.org graph as JSON-LD, with "<" escaped so it can't close the script tag. */
+const absolute = (url: string) => (url.startsWith("/") ? `${SITE_URL}${url}` : url);
+
+/** schema.org description of an article, for search engines' rich results. */
+export function articleSchema(post: Post): object {
+	const url = `${SITE_URL}${post.href}`;
+	const publisher = { "@type": "Organization", "@id": `${SITE_URL}/#organization`, name: SITE_NAME, url: `${SITE_URL}/`, description: SITE_TAGLINE };
+	return {
+		"@context": "https://schema.org",
+		"@graph": [
+			{
+				"@type": "Article",
+				"@id": `${url}#article`,
+				headline: post.title,
+				description: post.seo.description || post.excerpt,
+				datePublished: post.date,
+				dateModified: post.modified,
+				mainEntityOfPage: url,
+				url,
+				inLanguage: "en-GB",
+				...(post.image && { image: { "@type": "ImageObject", url: absolute(post.image.url), width: post.image.width, height: post.image.height } }),
+				author: {
+					"@type": "Person",
+					name: post.author,
+					...(post.authorInfo.slug && { url: `${SITE_URL}/author/${post.authorInfo.slug}/` }),
+				},
+				publisher: { "@id": publisher["@id"] },
+				...(post.category && { articleSection: post.category.name }),
+				...(post.tags.length && { keywords: post.tags.map((t) => t.name).join(", ") }),
+			},
+			{
+				"@type": "BreadcrumbList",
+				itemListElement: [
+					{ "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
+					...(post.category ? [{ "@type": "ListItem", position: 2, name: post.category.name, item: `${SITE_URL}/category/${post.category.slug}/` }] : []),
+					{ "@type": "ListItem", position: post.category ? 3 : 2, name: post.title },
+				],
+			},
+			publisher,
+		],
+	};
+}
+
+/** JSON-LD for a <script> tag, with "<" escaped so it can't close the tag. */
 export function jsonLd(schema: unknown): string | null {
 	if (!schema) return null;
 	return JSON.stringify(schema).replace(/</g, "\\u003c");

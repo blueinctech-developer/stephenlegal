@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPosts, getTopics, optional, type PostQuery } from "@/lib/wp";
+import { getPosts, getTopics, optional, type PostQuery } from "@/lib/data";
 import { ArchiveGrid, Pager, TopicNav } from "./Listing";
 
 type ArchiveProps = {

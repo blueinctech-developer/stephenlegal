@@ -1,19 +1,19 @@
 /**
  * Site-wide settings. Infrastructure values come from the environment; editorial
- * defaults mirror the WordPress theme's Customizer defaults.
+ * defaults carry over from the old site.
  */
 
 const trimSlash = (url: string) => url.replace(/\/+$/, "");
 
-/** Where WordPress (the CMS) lives. Today that is the live site itself. */
-export const WP_URL = trimSlash(process.env.WORDPRESS_URL || "https://stephenlegal.ng");
-
-/** The public URL of this Next.js site, used for canonicals, sitemaps and feeds. */
+/** The public URL of this site, used for canonicals, sitemaps and feeds. */
 export const SITE_URL = trimSlash(process.env.NEXT_PUBLIC_SITE_URL || "https://stephenlegal.ng");
 
 export const SITE_NAME = "Stephen Legal";
 
-/** Seconds before cached WordPress responses are refreshed. */
+/** The publication's tagline, as it read on the old site. */
+export const SITE_TAGLINE = "Law is dynamic and we're at the corridors of this dynamism.";
+
+/** Seconds before cached pages are rebuilt (saving in the admin refreshes them at once). */
 export const REVALIDATE = 300;
 
 /** Categories that describe placement rather than subject; never shown as a story's label. */

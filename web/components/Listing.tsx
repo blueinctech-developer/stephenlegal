@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { PostSummary } from "@/lib/wp";
+import type { PostSummary } from "@/lib/data";
 import { Card } from "./Card";
 
 /** Numbered pagination using WordPress's /page/N/ URLs. */
