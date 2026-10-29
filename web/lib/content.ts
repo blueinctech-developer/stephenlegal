@@ -3,7 +3,7 @@ import sanitizeHtml from "sanitize-html";
 import { SITE_URL, WP_URL } from "./config";
 import { addHeadingIds, type TocItem } from "./text";
 
-const EMBED_HOSTS = ["www.youtube.com", "youtube.com", "www.youtube-nocookie.com", "player.vimeo.com", "www.google.com", "docs.google.com"];
+const EMBED_HOSTS = ["www.youtube.com", "youtube.com", "www.youtube-nocookie.com", "player.vimeo.com", "www.google.com", "docs.google.com", "maps.google.com"];
 
 /**
  * Article and page HTML from WordPress, made safe to render: scripts, styles,
@@ -48,9 +48,10 @@ export function prepareContent(raw: string): { html: string; toc: TocItem[]; had
 			img: (tagName, attribs) => ({ tagName, attribs: { ...attribs, loading: "lazy", decoding: "async" } }),
 			iframe: (tagName, attribs) => ({ tagName, attribs: { ...attribs, loading: "lazy", title: attribs.title || "Embedded media" } }),
 		},
-		// Empty Elementor spacer and form wrappers left behind by removed widgets.
+		// Embeds from hosts not on the list, and empty Elementor spacer/form wrappers left behind by removed widgets.
 		exclusiveFilter: (frame) =>
-			frame.tag === "div" && !frame.text.trim() && !frame.mediaChildren.length && /elementor-(spacer|widget-html|widget-form|shortcode)/.test(frame.attribs.class || ""),
+			(frame.tag === "iframe" && !frame.attribs.src) ||
+			(frame.tag === "div" && !frame.text.trim() && !frame.mediaChildren.length && /elementor-(spacer|widget-html|widget-form|shortcode)/.test(frame.attribs.class || "")),
 	});
 
 	const { html, toc } = addHeadingIds(clean);

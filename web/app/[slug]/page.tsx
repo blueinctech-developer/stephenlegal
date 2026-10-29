@@ -4,8 +4,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackToTop, ReadProgress, ShareBar, Toc } from "@/components/ArticleTools";
 import { Card, Kicker, SectionHead, SplitTitle } from "@/components/Card";
+import { SiteForm } from "@/components/SiteForm";
 import { CONTACT, DISCLAIMER, SITE_URL, UNSUPPORTED_PAGES } from "@/lib/config";
 import { prepareContent } from "@/lib/content";
+import { FORM_BY_SLUG } from "@/lib/forms";
 import { jsonLd, seoMetadata } from "@/lib/seo";
 import { formatDate, readingMinutes, shouldShowToc } from "@/lib/text";
 import { getAdjacent, getPageBySlug, getPostBySlug, getRelated, optional, type Page, type Post } from "@/lib/wp";
@@ -188,6 +190,7 @@ async function Article({ post }: { post: Post }) {
 function StaticPage({ page }: { page: Page }) {
 	const { html, hadForm } = prepareContent(page.contentHtml);
 	const ld = jsonLd(page.seo?.schema);
+	const form = FORM_BY_SLUG[page.slug];
 	return (
 		<main id="main" className="wrap page" tabIndex={-1}>
 			{ld && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ld }} />}
@@ -196,7 +199,8 @@ function StaticPage({ page }: { page: Page }) {
 			</header>
 			<div className="page-content">
 				<div className="entry-content" dangerouslySetInnerHTML={{ __html: html }} />
-				{hadForm && (
+				{form && <SiteForm kind={form} />}
+				{hadForm && !form && (
 					<p className="form-note">
 						The online form for this page is being moved to the new site. Until then, email{" "}
 						<a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a> or call <a href={`tel:${CONTACT.phone}`}>{CONTACT.phone}</a>.
