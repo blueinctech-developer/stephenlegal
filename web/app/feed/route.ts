@@ -1,5 +1,5 @@
 import { SITE_NAME, SITE_URL } from "@/lib/config";
-import { getPosts, getSiteInfo } from "@/lib/wp";
+import { getPosts, getSiteInfo } from "@/lib/data";
 
 export const revalidate = 300;
 

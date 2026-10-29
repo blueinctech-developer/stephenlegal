@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import type { Image as WpImage, PostSummary } from "@/lib/wp";
+import type { Image as WpImage, PostSummary } from "@/lib/data";
 import { formatDate } from "@/lib/text";
 
 /** 16:9 frame (no layout shift) with the featured image, or a neutral placeholder. */

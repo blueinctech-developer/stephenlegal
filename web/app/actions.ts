@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { CONTACT } from "@/lib/config";
 import { FORMS, formatSubmission, validateForm, type FormErrors, type FormKind, type FormValues } from "@/lib/forms";
+import { db } from "@/lib/db";
 import { sendMail } from "@/lib/mail";
 
 export type FormState = { status: "idle" | "ok" | "invalid" | "failed"; message?: string; errors?: FormErrors; values?: FormValues; n: number };
@@ -40,10 +41,24 @@ export async function submitForm(kind: FormKind, prev: FormState, formData: Form
 		return { status: "failed", message: `You’ve sent several messages in a short time. Please try again later, or email ${CONTACT.email}.`, values, n };
 	}
 
+	// Kept in the admin's Messages inbox, and emailed to the publication when email is set up.
+	// The visitor sees success if either worked.
+	let storedId: number | null = null;
+	try {
+		const [row] = await db()<{ id: number }[]>`insert into submissions (form, data) values (${kind}, ${db().json(values)}) returning id`;
+		storedId = row.id;
+	} catch (err) {
+		console.error(`[form] ${kind} could not be stored`, err);
+	}
+	let emailed = false;
 	try {
 		await sendMail({ subject: `${def.subject}: ${values.name.replace(/\s+/g, " ")}`, text: formatSubmission(def, values), replyTo: values.email });
+		emailed = true;
+		if (storedId) await db()`update submissions set email_sent = true where id = ${storedId}`;
 	} catch (err) {
-		console.error(`[form] ${kind} could not be sent`, err);
+		console.error(`[form] ${kind} could not be emailed`, err);
+	}
+	if (!storedId && !emailed) {
 		return {
 			status: "failed",
 			message: `Sorry, your message couldn’t be sent just now. Please try again, or email ${CONTACT.email} or call ${CONTACT.phone}.`,
