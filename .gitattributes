@@ -2,5 +2,6 @@
 *.png binary
 # Keep dev tooling out of `git archive` builds of the theme.
 /dev export-ignore
+/web export-ignore
 /.gitignore export-ignore
 /.gitattributes export-ignore
