@@ -1,0 +1,9 @@
+# Local test content fetched from the live site's public REST API (see dev/README.md)
+dev/*.json
+!dev/blueprint.json
+dev/*.log
+dev/*.html
+*.zip
+node_modules/
+.DS_Store
+Thumbs.db

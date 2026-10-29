@@ -1,0 +1,9 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"landingPage": "/",
+	"preferredVersions": { "php": "8.3", "wp": "latest" },
+	"steps": [
+		{ "step": "activateTheme", "themeFolderName": "stephenlegal-editorial" },
+		{ "step": "runPHP", "code": "<?php require '/wordpress/wp-load.php'; require '/sl-dev/import.php';" }
+	]
+}
