@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const WP_URL = (process.env.WORDPRESS_URL || "https://stephenlegal.ng").replace(/\/+$/, "");
 const wpHost = new URL(WP_URL).hostname;
+// Only the real domain is indexed; previews and test copies stay out of search results.
+const IS_PUBLIC_SITE = new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://stephenlegal.ng").hostname === "stephenlegal.ng";
 
 const securityHeaders = [
 	{ key: "X-Content-Type-Options", value: "nosniff" },
@@ -26,7 +28,8 @@ const nextConfig: NextConfig = {
 		formats: ["image/avif", "image/webp"],
 	},
 	async headers() {
-		return [{ source: "/:path*", headers: securityHeaders }];
+		const headers = IS_PUBLIC_SITE ? securityHeaders : [...securityHeaders, { key: "X-Robots-Tag", value: "noindex, nofollow" }];
+		return [{ source: "/:path*", headers }];
 	},
 	async redirects() {
 		return [

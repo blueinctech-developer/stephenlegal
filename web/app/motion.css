@@ -199,3 +199,39 @@ html { scroll-padding-top: 6rem; }
 	.ticker__toggle { display: none; }
 	.site-header { transition: none; }
 }
+
+/* ---------- Site forms (Contact, Become a Contributor) ---------- */
+.site-form { margin-top: var(--s-7); padding-top: var(--s-6); border-top: 4px solid var(--c-ink); max-width: 40rem; }
+.site-form__title { font-size: var(--fs-xl, 1.5rem); margin-bottom: var(--s-4); }
+.site-form__form { display: grid; gap: var(--s-5); }
+.site-form__req { font-size: var(--fs-sm); color: var(--fg-2); margin: 0; }
+.field { display: grid; gap: var(--s-2); border: 0; padding: 0; margin: 0; min-width: 0; }
+.field legend { font-weight: 600; font-size: var(--fs-sm); padding: 0; margin-bottom: var(--s-2); }
+.field__hint { font-size: var(--fs-sm); color: var(--fg-2); margin: 0; }
+.field__error { font-size: var(--fs-sm); font-weight: 600; color: var(--c-accent-ink); margin: 0; display: flex; gap: var(--s-2); }
+.field__error::before { content: "!"; display: inline-grid; place-items: center; width: 1.25em; height: 1.25em; flex: none; background: var(--c-accent-ink); color: var(--c-white); font-size: 0.85em; }
+.field.has-error input, .field.has-error textarea { border-color: var(--c-accent-ink); border-width: 2px; }
+.field textarea { min-height: 10rem; padding-block: var(--s-3); resize: vertical; }
+.field__choices { display: flex; gap: var(--s-3); flex-wrap: wrap; }
+.choice { display: inline-flex; align-items: center; gap: var(--s-2); min-height: 48px; padding: 0 var(--s-5) 0 var(--s-4); border: 1.5px solid var(--c-rule-strong); background: var(--c-white); cursor: pointer; font-size: var(--fs-base); transition: border-color .15s var(--ease), background-color .15s var(--ease); }
+.choice input { width: 1.25rem; height: 1.25rem; margin: 0; accent-color: var(--c-ink); }
+.choice:has(input:checked) { border-color: var(--c-ink); background: var(--c-paper-2); }
+.choice:has(input:focus-visible) { outline: 3px solid var(--c-accent); outline-offset: 2px; }
+/* The enrollment number only applies to lawyers: hide it once "No" is chosen (no script needed). */
+.site-form__form:has(input[name="lawyer"][value="No"]:checked) .field--enrollment { display: none; }
+.site-form__trap { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.site-form__submit { justify-self: start; min-width: 12rem; }
+.site-form__submit[disabled] { opacity: 0.7; cursor: progress; }
+.site-form__alert { padding: var(--s-4) var(--s-5); border-left: 4px solid var(--c-accent-ink); background: var(--c-paper-2); }
+.site-form__alert p { margin: 0; font-weight: 600; }
+.site-form__alert ul { margin: var(--s-2) 0 0; padding-left: var(--s-5); }
+.site-form__alert a { color: var(--c-accent-ink); text-decoration: underline; text-underline-offset: 3px; }
+.site-form__alert:focus, .site-form__done:focus { outline: none; }
+.site-form__alert:focus-visible, .site-form__done:focus-visible { outline: 3px solid var(--c-accent); outline-offset: 2px; }
+.site-form__done { display: grid; gap: var(--s-4); justify-items: start; padding: var(--s-6); background: var(--c-paper-2); border-left: 4px solid var(--c-ink); }
+.site-form__done svg { color: var(--c-ink); background: var(--c-accent); padding: 4px; width: 40px; height: 40px; }
+.site-form__done p { margin: 0; font-size: var(--fs-lg, 1.25rem); }
+.btn--ghost { background: transparent; color: var(--c-ink); box-shadow: inset 0 0 0 2px var(--c-ink); }
+.btn--ghost:hover { background: var(--c-ink); color: var(--c-white); }
+.site-form__fields { display: contents; }
+.entry-content .elementor-custom-embed iframe { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border: 0; }
