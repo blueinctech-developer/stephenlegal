@@ -94,7 +94,7 @@ asked for when the visitor answers "Yes" to being a Nigerian lawyer.
    `NEXT_PUBLIC_SITE_URL` (the Vercel address for now), `ADMIN_SETUP_TOKEN`, and
    optionally the `SMTP_*` values. Then **Deploy**.
 5. **Copy the content in:** on a computer with the project, put the production
-   `DATABASE_URL` and `BLOB_READ_WRITE_TOKEN` in `.env.local`, then run
+   settings with `npx vercel link` and `npx vercel env pull`, then run
    `npm run db:migrate` and `npm run import:wordpress`. This reads stephenlegal.ng
    and changes nothing there. It takes a while: the old host refuses bursts, so
    the import goes slowly and retries.

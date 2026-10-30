@@ -1,6 +1,7 @@
 /**
- * Where uploaded files (images, PDFs) are kept. With BLOB_READ_WRITE_TOKEN set
- * (production on Vercel) files go to Vercel Blob; otherwise to .data/uploads,
+ * Where uploaded files (images, PDFs) are kept. With a Vercel Blob store connected
+ * (BLOB_STORE_ID, signed in by Vercel automatically, or an older
+ * BLOB_READ_WRITE_TOKEN) files go to Vercel Blob; otherwise to .data/uploads,
  * served by app/uploads/[...path]/route.ts. No server-only import, so the
  * WordPress import script can use it too.
  */
@@ -8,7 +9,7 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 export const LOCAL_UPLOADS = path.resolve(process.cwd(), ".data", "uploads");
-const blobConfigured = () => Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+const blobConfigured = () => Boolean(process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN);
 
 /** Normalises a key like "2024/05/photo.jpg": lower-case-safe characters, no "..". */
 export function safeKey(key: string): string {
