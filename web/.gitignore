@@ -9,3 +9,6 @@ npm-debug.log*
 
 # Local database and uploaded files (npm run db:local / local media storage)
 .data/
+
+.vercel
+.env*

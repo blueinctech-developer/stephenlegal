@@ -27,6 +27,8 @@ const args = Object.fromEntries(
 const SOURCE = (args.source || process.env.WORDPRESS_URL || "https://stephenlegal.ng").replace(/\/+$/, "");
 const LIMIT = args.limit ? Number(args.limit) : Infinity;
 const COPY_MEDIA = args.media !== "link";
+// Resume after a stop: the page of 10 articles to start from.
+const FROM_PAGE = args["from-page"] ? Number(args["from-page"]) : 1;
 // The live site and the address WordPress links still use for its own files.
 const ORIGINS = [...new Set([SOURCE, "https://stephenlegal.ng", "http://stephenlegal.ng", "https://www.stephenlegal.ng"])];
 const SKIP_PAGES = new Set(["login", "register", "edit-profile", "password-reset", "sample-page", "bookmark"]);
@@ -40,7 +42,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function get(url: string, kind: "json" | "file" = "json"): Promise<Response> {
 	let last = "";
-	for (let attempt = 0; attempt < 7; attempt++) {
+	for (let attempt = 0; attempt < 12; attempt++) {
 		try {
 			const res = await fetch(url, { headers: { Accept: kind === "json" ? "application/json" : "*/*", "User-Agent": "StephenLegal-Migration/1.0" } });
 			if (res.ok) return res;
@@ -49,15 +51,15 @@ async function get(url: string, kind: "json" | "file" = "json"): Promise<Respons
 		} catch (e) {
 			last = (e as Error).message;
 		}
-		const wait = Math.min(30000, 1000 * 2 ** attempt);
+		const wait = Math.min(120000, 1000 * 2 ** attempt);
 		process.stdout.write(`  … ${last}, retrying in ${wait / 1000}s\n`);
 		await sleep(wait);
 	}
 	throw new Error(`${last} for ${url}`);
 }
 
-async function* pages<T>(path: string, query: Record<string, string>): AsyncGenerator<T[]> {
-	for (let page = 1; ; page++) {
+async function* pages<T>(path: string, query: Record<string, string>, first = 1): AsyncGenerator<T[]> {
+	for (let page = first; ; page++) {
 		const url = new URL(`${SOURCE}/wp-json/wp/v2/${path}`);
 		for (const [k, v] of Object.entries({ ...query, page: String(page) })) url.searchParams.set(k, v);
 		const res = await get(url.toString());
@@ -66,7 +68,7 @@ async function* pages<T>(path: string, query: Record<string, string>): AsyncGene
 		if (!items.length) return;
 		yield items;
 		if (page >= Number(res.headers.get("x-wp-totalpages") || page)) return;
-		await sleep(400);
+		await sleep(3000);
 	}
 }
 
@@ -265,13 +267,14 @@ async function importEntry(type: "post" | "page", p: RawPost) {
 async function importAll(type: "post" | "page") {
 	const fields = "id,slug,date_gmt,modified_gmt,title,content,excerpt,sticky,categories,tags,yoast_head_json,_links,_embedded";
 	let n = 0;
-	for await (const batch of pages<RawPost>(type === "post" ? "posts" : "pages", {
-		per_page: type === "post" ? "20" : "50",
+	const query = {
+		per_page: type === "post" ? "10" : "50",
 		orderby: "id",
 		order: "asc",
 		_embed: "author,wp:featuredmedia",
 		_fields: fields,
-	})) {
+	};
+	for await (const batch of pages<RawPost>(type === "post" ? "posts" : "pages", query, type === "post" ? FROM_PAGE : 1)) {
 		for (const p of batch) {
 			if (type === "page" && SKIP_PAGES.has(p.slug)) continue;
 			if (n >= LIMIT && type === "post") return;
@@ -286,10 +289,13 @@ async function importAll(type: "post" | "page") {
 /* ---------- Run ---------- */
 
 console.log(`Importing from ${SOURCE} (${COPY_MEDIA ? "copying files" : "linking files"}${Number.isFinite(LIMIT) ? `, first ${LIMIT} posts` : ""})`);
-console.log("Categories…");
-await importTerms("category");
-console.log("Tags…");
-await importTerms("tag");
+// A resumed run already has its categories and tags.
+if (FROM_PAGE === 1) {
+	console.log("Categories…");
+	await importTerms("category");
+	console.log("Tags…");
+	await importTerms("tag");
+}
 console.log("Posts…");
 await importAll("post");
 console.log("Pages…");
