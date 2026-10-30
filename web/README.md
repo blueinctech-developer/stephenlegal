@@ -88,8 +88,10 @@ asked for when the visitor answers "Yes" to being a Nigerian lawyer.
    Storage → Neon). Copy its connection string.
 2. **Project:** at vercel.com, **Add New → Project**, import
    `blueinctech-developer/stephenlegal`, set **Root Directory** to `web`.
-3. **File storage:** Vercel → Storage → **Blob** → create, and connect it to the
-   project (this adds `BLOB_READ_WRITE_TOKEN`).
+3. **File storage:** Vercel → Storage → **Blob** → create a **Public** store, and
+   connect it to the project with Development, Preview and Production all ticked
+   (this adds `BLOB_STORE_ID`). The import runs as Development, and images need
+   public addresses.
 4. **Settings** (Project → Settings → Environment Variables): `DATABASE_URL`,
    `NEXT_PUBLIC_SITE_URL` (the Vercel address for now), `ADMIN_SETUP_TOKEN`, and
    optionally the `SMTP_*` values. Then **Deploy**.
@@ -97,7 +99,8 @@ asked for when the visitor answers "Yes" to being a Nigerian lawyer.
    settings with `npx vercel link` and `npx vercel env pull`, then run
    `npm run db:migrate` and `npm run import:wordpress`. This reads stephenlegal.ng
    and changes nothing there. It takes a while: the old host refuses bursts, so
-   the import goes slowly and retries.
+   the import goes slowly and retries. If it stops, `--from-page=N` resumes at
+   that page of 10 articles.
 6. **First administrator:** open `/admin/` on the Vercel address and enter the setup code.
    Then remove `ADMIN_SETUP_TOKEN` from the settings.
 
