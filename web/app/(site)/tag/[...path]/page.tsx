@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Archive } from "@/components/Archive";
-import { parsePaged } from "@/components/Listing";
+import { LegacyPage } from "@/components/legacy/LegacyPage";
+import { archiveSubject, parsePaged, renderListing } from "@/lib/legacy/archives";
+import { T } from "@/lib/legacy/render";
 import { seoMetadata } from "@/lib/seo";
-import { getTagBySlug } from "@/lib/data";
 
 export const revalidate = 300;
 export function generateStaticParams() {
@@ -14,15 +14,15 @@ type Props = { params: Promise<{ path: string[] }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	const parsed = parsePaged((await params).path);
-	const tag = parsed && (await getTagBySlug(parsed.slug));
-	if (!parsed || !tag) return { title: "Not found", robots: { index: false } };
-	const path = parsed.page > 1 ? `/tag/${tag.slug}/page/${parsed.page}/` : `/tag/${tag.slug}/`;
-	return seoMetadata(null, { title: tag.name, description: tag.description, path });
+	const name = parsed && (await archiveSubject("tag", parsed.slug));
+	if (!parsed || !name) return { title: "Not found", robots: { index: false } };
+	const path = parsed.page > 1 ? `/tag/${parsed.slug}/page/${parsed.page}/` : `/tag/${parsed.slug}/`;
+	return seoMetadata(null, { title: `${name} Archives${parsed.page > 1 ? ` - Page ${parsed.page}` : ""}`, path });
 }
 
-export default async function TagPage({ params }: Props) {
+export default async function ListingPage({ params }: Props) {
 	const parsed = parsePaged((await params).path);
-	const tag = parsed && (await getTagBySlug(parsed.slug));
-	if (!parsed || !tag) notFound();
-	return <Archive kicker="Tag" title={tag.name} description={tag.description} base={`/tag/${tag.slug}/`} page={parsed.page} query={{ tags: [tag.id] }} />;
+	const html = parsed && (await renderListing("tag", parsed.slug, parsed.page));
+	if (!html) notFound();
+	return <LegacyPage html={html} bodyClass={T.archive.bodyClass} />;
 }

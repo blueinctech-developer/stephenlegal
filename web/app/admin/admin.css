@@ -1,6 +1,11 @@
 /* Admin dashboard. Builds on the site's tokens (globals.css); everything is scoped to .admin. */
 
-.admin { min-height: 100vh; background: var(--c-paper); color: var(--c-ink); font-size: var(--fs-base); }
+/* The font files are attached to .admin (app/admin/layout.tsx), so the font tokens are set here too. */
+.admin {
+	--font-sans: var(--font-space-grotesk), "Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+	--font-serif: var(--font-source-serif), "Source Serif 4", Georgia, "Times New Roman", serif;
+	min-height: 100vh; background: var(--c-paper); color: var(--c-ink); font-size: var(--fs-base); font-family: var(--font-sans);
+}
 .admin h1 { font-size: var(--fs-xl); letter-spacing: -0.02em; margin: 0; }
 .admin h2 { font-size: var(--fs-base); font-weight: 700; margin: 0 0 var(--s-3); }
 .admin code { font-size: 0.9em; background: var(--c-paper-2); padding: 0 4px; }
