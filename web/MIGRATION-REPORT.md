@@ -39,8 +39,8 @@ is untouched and still serves the live site.
   stylesheets, including the site's own custom CSS and colour settings.
 - **Homepage:** all sections in the original order, each block filled by the rule it
   follows on the live site, for example "newest 6, skipping the first 2" or "newest
-  Case Law". The moving headlines block shows its 10 stories without the theme's
-  scrolling animation.
+  Case Law". The Highlights ticker, quote slider and post slider move with the theme's
+  own settings (jQuery Marquee and Swiper, read from the live site's `forcast-core.js`).
 - **Page types:**
   - Article page: badges, title, author, date, excerpt, image, body, tags, share
     buttons, previous/next, and the sidebar with Recent Post, adverts and Top Week.
@@ -69,8 +69,7 @@ is untouched and still serves the live site.
 | Become a Contributor page layout | Built in Elementor; its content didn't come through the API | The form is rebuilt in the same Gravity Forms style, but the surrounding layout is approximate |
 | Menus, footer links, widgets and adverts | Copied as they are; not yet editable | Menu and widget editing in the admin is still to be built |
 | /about-us/ (linked in the header) | No such page exists in WordPress's page list | Confirm whether it exists on the live site |
-| Rotating quote and post slider, scrolling headlines | Theme scripts not available | They show as static lists |
-| Five decorative or demo images (Dot-Shape, image-74-1, two theme demo banners) | Not archived | Need the hosting backup |
+| Two theme demo banner images (byteflows.net) | Hot-linked from the theme author's demo site, as on the live site | None needed |
 
 ## Admin
 

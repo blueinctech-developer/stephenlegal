@@ -46,18 +46,28 @@
 	on(".bytf__search-close-btn, .bytf__body-overlay", "click", closeAll);
 	document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(); });
 
-	// Menu bar sticks to the top once the page scrolls past the header.
-	const bars = $$(".bytf-sticky-header");
-	const stick = () => {
-		const y = window.scrollY > 250;
-		bars.forEach((el) => {
-			el.classList.toggle("main-header-sticky", y);
-			el.classList.toggle("rr-sticky-stt", y);
-			el.classList.toggle("bytf-sticky-header-fixed", y);
-		});
-	};
-	window.addEventListener("scroll", stick, { passive: true });
-	stick();
+	// Sticky menu bar, as the theme does it: a copy of the bar slides in at the top when
+	// the reader scrolls back up after passing 300px, and hides again on the way down.
+	const stickyCopies = $$(".bytf-sticky-header").map((bar) => {
+		bar.classList.add("original");
+		const copy = bar.cloneNode(true);
+		copy.classList.remove("original");
+		copy.classList.add("main-header-sticky", "rr-sticky-stt");
+		bar.after(copy);
+		return copy;
+	});
+	let lastY = window.scrollY;
+	window.addEventListener(
+		"scroll",
+		() => {
+			const y = window.scrollY;
+			const up = y < lastY;
+			lastY = y;
+			stickyCopies.forEach((c) => c.classList.toggle("bytf-sticky-header-fixed", up && y > 300));
+			if (stickyCopies.length) document.body.classList.add("bytf-sticky-header-sticky");
+		},
+		{ passive: true },
+	);
 
 	// Story tabs (Top stories / Trending News / Latest News).
 	on(".bytf__post-tab-wrapper .nav-link", "click", (e, btn) => {
@@ -69,8 +79,8 @@
 		panes.forEach((p, j) => { p.classList.toggle("active", j === i); p.classList.toggle("show", j === i); });
 	});
 
-	// Dark mode, remembered in this browser.
-	const KEY = "sl-theme";
+	// Dark mode, remembered in this browser (same storage key as the theme, so readers keep their choice).
+	const KEY = "theme";
 	const setTheme = (dark) => {
 		document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
 		$$(".empath-switch-box__input").forEach((i) => (i.checked = dark));
@@ -101,10 +111,10 @@
 
 	// The /bookmark/ page lists them.
 	const list = document.getElementById("sl-bookmarks");
-	const saved = marks().filter((h) => /^\/[a-z0-9-]+\/$/i.test(h));
-	if (list && saved.length) {
+	const savedLinks = marks().filter((h) => /^\/[a-z0-9-]+\/$/i.test(h));
+	if (list && savedLinks.length) {
 		const name = (h) => h.slice(1, -1).replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase());
-		list.innerHTML = `<ul>${saved.map((h) => `<li><a href="${h}">${name(h)}</a></li>`).join("")}</ul>`;
+		list.innerHTML = `<ul>${savedLinks.map((h) => `<li><a href="${h}">${name(h)}</a></li>`).join("")}</ul>`;
 	}
 })();
 
@@ -123,4 +133,51 @@
 		wrap.scrollIntoView({ block: "center" });
 	}
 	history.replaceState(null, "", location.pathname);
+})();
+
+/* Moving parts, with the theme's own settings (forcast-core.js): the Highlights ticker
+   (jQuery Marquee) and the quote and post sliders (Swiper 6). The libraries are loaded
+   here, in order, once the page is interactive. */
+(async () => {
+	const load = (src) =>
+		new Promise((resolve, reject) => {
+			const s = document.createElement("script");
+			s.src = src;
+			s.onload = resolve;
+			s.onerror = reject;
+			document.body.append(s);
+		});
+	try {
+		if (!window.jQuery) await load("/legacy/vendor/jquery.min.js");
+		if (!window.jQuery.fn.marquee) await load("/legacy/vendor/jquery.marquee.min.js");
+		if (!window.Swiper) await load("/legacy/vendor/swiper-bundle.min.js");
+	} catch {
+		return;
+	}
+	const $ = window.jQuery;
+	if ($ && $.fn.marquee)
+		$(".post-ov-sroller").marquee({ gap: 0, speed: 80, delayBeforeStart: 0, direction: "left", duplicated: true, pauseOnHover: true, startVisible: true });
+	if (!window.Swiper) return;
+	if (document.querySelector(".quoteslide__active"))
+		new Swiper(".quoteslide__active", { slidesPerView: 1, loop: true, speed: 2000, spaceBetween: 30, autoplay: { delay: 5000 } });
+	if (document.querySelector(".post_slider_three__active")) {
+		const thumbs = document.querySelector(".post_slider_three__thumb")
+			? new Swiper(".post_slider_three__thumb", {
+					slidesPerView: 3,
+					freeMode: true,
+					spaceBetween: 36,
+					watchSlidesVisibility: true,
+					watchSlidesProgress: true,
+					breakpoints: { 320: { slidesPerView: 1, spaceBetween: 10 }, 480: { slidesPerView: 1, spaceBetween: 20 }, 768: { slidesPerView: 2, spaceBetween: 30 }, 1024: { slidesPerView: 3, spaceBetween: 36 } },
+				})
+			: undefined;
+		new Swiper(".post_slider_three__active", {
+			effect: "slide",
+			parallax: true,
+			speed: 1600,
+			autoplay: { delay: 10000, disableOnInteraction: false },
+			navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
+			...(thumbs && { thumbs: { swiper: thumbs } }),
+		});
+	}
 })();
