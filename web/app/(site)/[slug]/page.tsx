@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Article, StaticPage } from "@/components/ArticleView";
+import { LegacyPage } from "@/components/legacy/LegacyPage";
+import { renderSingle, renderStaticPage } from "@/lib/legacy/pages";
+import { renderPage, T } from "@/lib/legacy/render";
+import { articleSchema, jsonLd, seoMetadata } from "@/lib/seo";
 import { UNSUPPORTED_PAGES } from "@/lib/config";
 import { getPageBySlug, getPostBySlug, type Page, type Post } from "@/lib/data";
-import { seoMetadata } from "@/lib/seo";
 
 export const revalidate = 300;
 
@@ -38,5 +40,16 @@ export default async function SlugPage({ params }: Props) {
 	const { slug } = await params;
 	const found = await resolve(slug);
 	if (!found) notFound();
-	return "post" in found ? <Article post={found.post} /> : <StaticPage page={found.page} />;
+	if ("post" in found) {
+		const schema = jsonLd(articleSchema(found.post));
+		return (
+			<>
+				{schema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: schema }} />}
+				<LegacyPage html={await renderSingle(found.post)} bodyClass={T.single.bodyClass.replace(/postid-d+/, `postid-${found.post.id}`)} />
+			</>
+		);
+	}
+	// The contact page is an Elementor layout (details, form, map); other pages use the theme's page layout.
+	if (found.page.slug === "contact") return <LegacyPage html={await renderPage(T.contact.main)} bodyClass={T.contact.bodyClass} />;
+	return <LegacyPage html={await renderStaticPage(found.page.slug, found.page.title, found.page.contentHtml)} bodyClass={`page-template-default page page-id-${found.page.id} wp-theme-forcast ori-inner-page elementor-default elementor-kit-7`} />;
 }

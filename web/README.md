@@ -7,7 +7,7 @@ again just before launch to pick up anything new).
 
 | Part | Where |
 |---|---|
-| Public site (animated, interactive) | `app/(site)/`, `components/` |
+| Public site (the old theme's design) | `app/(site)/`, `lib/legacy/`, `public/legacy/` |
 | Admin dashboard | `app/admin/` |
 | Content queries | `lib/data.ts` |
 | Database tables | `db/schema.sql` |
@@ -52,35 +52,23 @@ HttpOnly cookie, stored only as a hash; repeated wrong passwords are slowed
 down; every admin action checks the signed-in user and role; content is cleaned
 of scripts and unknown embeds when saved and again when shown.
 
-## What's interactive on the site
+## How the public pages look exactly like WordPress
 
-| Feature | Where | How |
-|---|---|---|
-| Headline sets in word by word | Lead story, article titles | CSS keyframes |
-| Cards and sections rise into view | All listings | CSS scroll-driven animation (no JS) |
-| Hero image drift and feature zoom | Articles, homepage feature band | CSS scroll-driven animation |
-| Accent rule sweeps under card images | All cards | CSS hover/focus |
-| Header slides away while reading, returns on scroll up | Every page | Small client component |
-| Animated menu panel with staggered topics | Header | Motion |
-| Latest-headlines ticker with pause button | Under the header | CSS marquee, pauses on hover/focus |
-| Topic filter chips with re-flowing cards | Homepage "Latest analysis" | Motion layout animation |
-| Instant search (`/` or Ctrl+K) with keyboard selection | Everywhere | Postgres full-text search via `/api/search/` |
-| Reading progress bar, live table of contents | Articles | Motion spring, scroll tracking |
-| Save for later, copy link, toast | Articles; list at `/bookmark/` | localStorage (this browser only) |
-| Back to top | Articles | Motion |
-| Page fade-in on navigation | Every page | CSS in `app/(site)/template.tsx` |
-| Contact and contributor forms with inline errors and animated confirmation | `/contact/`, `/become-a-contributor/` | Server action (works without JavaScript) |
-
-All movement stops under `prefers-reduced-motion`; the ticker becomes a static row.
+The public site reuses the old site's own markup and stylesheets (Forcast theme,
+Elementor templates). `scripts/build-legacy.ts` turned saved copies of the old
+pages into `lib/legacy/templates.json`, with every story card a slot that is filled
+from the database (`lib/legacy/render.ts`). The stylesheets live in
+`public/legacy/`, and the theme's behaviours (menus, search overlay, tabs, dark mode,
+bookmarks) are in `public/legacy/site.js`. See `MIGRATION-REPORT.md` for what was
+copied and what still differs.
 
 ## Forms
 
-The Contact and Become a Contributor forms have the same fields as the old
-Gravity Forms. Each message is saved under **Messages** in the admin and, when
-the `SMTP_*` settings are filled in, emailed to `info@stephenlegal.ng` through
-the publication's own mailbox. Spam protection: a hidden field bots fill in, and
-at most 5 messages per visitor every 10 minutes. The enrollment number is only
-asked for when the visitor answers "Yes" to being a Nigerian lawyer.
+The Contact, Become a Contributor and footer newsletter forms keep the old Gravity
+Forms markup and post to `/api/forms/<kind>/`. Each message is saved under
+**Messages** in the admin and, when the `SMTP_*` settings are filled in, emailed to
+`info@stephenlegal.ng` through the publication's own mailbox. Spam protection: a
+hidden field bots fill in, and at most 5 messages per visitor every 10 minutes.
 
 ## Putting it online (Vercel)
 

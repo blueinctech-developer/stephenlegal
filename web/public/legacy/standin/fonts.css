@@ -1,0 +1,50 @@
+/*
+ * Stand-ins for the theme's licensed fonts, which were not available to copy:
+ * Font Awesome 5 Pro (icons) uses the free Font Awesome 5 files, and NYT Cheltenham
+ * (headings) falls back to Georgia. Replace with the theme's own font files when
+ * they are supplied (wp-content/themes/forcast/assets/fonts/).
+ */
+@font-face {
+	font-family: "Font Awesome 5 Pro";
+	font-weight: 300;
+	font-display: block;
+	src: url("fa-regular-400.woff2") format("woff2");
+}
+@font-face {
+	font-family: "Font Awesome 5 Pro";
+	font-weight: 400;
+	font-display: block;
+	src: url("fa-regular-400.woff2") format("woff2");
+}
+@font-face {
+	font-family: "Font Awesome 5 Pro";
+	font-weight: 900;
+	font-display: block;
+	src: url("fa-solid-900.woff2") format("woff2");
+}
+@font-face {
+	font-family: "Font Awesome 5 Brands";
+	font-weight: 400;
+	font-display: block;
+	src: url("fa-brands-400.woff2") format("woff2");
+}
+/* One face per weight the theme declares, so these win over its missing files. */
+@font-face { font-family: "NYTCheltenham"; font-weight: 300; src: local("Georgia"); }
+@font-face { font-family: "NYTCheltenham"; font-weight: 400; src: local("Georgia"); }
+@font-face { font-family: "NYTCheltenham"; font-weight: 500; src: local("Georgia"); }
+@font-face { font-family: "NYTCheltenham"; font-weight: 700; src: local("Georgia Bold"), local("Georgia-Bold"), local("Georgia"); }
+@font-face { font-family: "NYTCheltenham Book"; font-weight: 400; src: local("Georgia"); }
+/* Icons the free set has only in solid. */
+.fal.fa-times::before,
+.fal.fa-chevron-double-right::before,
+.fal.fa-chevron-double-left::before {
+	font-weight: 900;
+}
+.fal.fa-chevron-double-right::before {
+	content: "\f101";
+	font-family: "Font Awesome 5 Pro";
+}
+.fal.fa-chevron-double-left::before {
+	content: "\f100";
+	font-family: "Font Awesome 5 Pro";
+}

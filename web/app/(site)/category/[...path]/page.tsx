@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Archive } from "@/components/Archive";
-import { parsePaged } from "@/components/Listing";
+import { LegacyPage } from "@/components/legacy/LegacyPage";
+import { archiveSubject, parsePaged, renderListing } from "@/lib/legacy/archives";
+import { T } from "@/lib/legacy/render";
 import { seoMetadata } from "@/lib/seo";
-import { getCategoryBySlug } from "@/lib/data";
 
 export const revalidate = 300;
 export function generateStaticParams() {
@@ -14,26 +14,15 @@ type Props = { params: Promise<{ path: string[] }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	const parsed = parsePaged((await params).path);
-	const cat = parsed && (await getCategoryBySlug(parsed.slug));
-	if (!parsed || !cat) return { title: "Not found", robots: { index: false } };
-	const path = parsed.page > 1 ? `/category/${cat.slug}/page/${parsed.page}/` : `/category/${cat.slug}/`;
-	return seoMetadata(null, { title: parsed.page > 1 ? `${cat.name} (page ${parsed.page})` : cat.name, description: cat.description, path });
+	const name = parsed && (await archiveSubject("category", parsed.slug));
+	if (!parsed || !name) return { title: "Not found", robots: { index: false } };
+	const path = parsed.page > 1 ? `/category/${parsed.slug}/page/${parsed.page}/` : `/category/${parsed.slug}/`;
+	return seoMetadata(null, { title: `${name} Archives${parsed.page > 1 ? ` - Page ${parsed.page}` : ""}`, path });
 }
 
-export default async function CategoryPage({ params }: Props) {
+export default async function ListingPage({ params }: Props) {
 	const parsed = parsePaged((await params).path);
-	const cat = parsed && (await getCategoryBySlug(parsed.slug));
-	if (!parsed || !cat) notFound();
-	return (
-		<Archive
-			kicker="Topic"
-			title={cat.name}
-			description={cat.description}
-			base={`/category/${cat.slug}/`}
-			page={parsed.page}
-			query={{ categories: [cat.id] }}
-			currentTopic={cat.slug}
-			crumb
-		/>
-	);
+	const html = parsed && (await renderListing("category", parsed.slug, parsed.page));
+	if (!html) notFound();
+	return <LegacyPage html={html} bodyClass={T.archive.bodyClass} />;
 }

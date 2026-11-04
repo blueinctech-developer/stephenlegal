@@ -1,18 +1,11 @@
 import type { Metadata } from "next";
-import { SavedList } from "@/components/SavedList";
+import { LegacyPage } from "@/components/legacy/LegacyPage";
+import { renderStaticPage } from "@/lib/legacy/pages";
 
-export const metadata: Metadata = { title: { absolute: "Saved articles - Stephen Legal" }, robots: { index: false, follow: true } };
+export const metadata: Metadata = { title: { absolute: "Bookmark - Stephen Legal" }, robots: { index: false, follow: true } };
 
-/** Replaces the old theme's /bookmark/ page: articles saved in this browser. */
-export default function BookmarkPage() {
-	return (
-		<main id="main" className="wrap page" tabIndex={-1}>
-			<header className="page-header">
-				<h1 className="page-header__title">Saved articles</h1>
-			</header>
-			<div className="page-content">
-				<SavedList />
-			</div>
-		</main>
-	);
+/** Articles saved with the bookmark buttons, kept in this browser (filled in by public/legacy/site.js). */
+export default async function BookmarkPage() {
+	const html = await renderStaticPage("bookmark", "Bookmark", '<div id="sl-bookmarks"><p>You have not bookmarked any articles yet.</p></div>');
+	return <LegacyPage html={html} bodyClass="page-template-default page wp-theme-forcast ori-inner-page elementor-default elementor-kit-7" />;
 }
