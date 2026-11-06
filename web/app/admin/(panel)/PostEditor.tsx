@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { startTransition, useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { MediaPicker, type PickedMedia } from "@/components/admin/MediaPicker";
+import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import { RichEditor } from "@/components/admin/RichEditor";
 import { toLagosInput, toSlug } from "@/lib/admin-format";
 import { deletePost, savePost, type SaveState } from "./content-actions";
@@ -335,19 +336,16 @@ function DeleteButton({ id, kind }: { id: number; kind: string }) {
 	const [pending, startTransition] = useTransition();
 	return (
 		<div className="adm-box adm-box--danger">
-			<button
-				type="button"
-				disabled={pending}
-				className="adm-link adm-link--danger"
-				onClick={() => {
-					if (!window.confirm(`Delete this ${kind} permanently? This can’t be undone.`)) return;
+			<ConfirmButton
+				label={`Delete this ${kind}`}
+				question={`Delete this ${kind} permanently? This can’t be undone.`}
+				busy={pending}
+				onConfirm={() => {
 					const data = new FormData();
 					data.set("id", String(id));
 					startTransition(() => deletePost(data));
 				}}
-			>
-				{pending ? "Deleting…" : `Delete this ${kind}`}
-			</button>
+			/>
 		</div>
 	);
 }

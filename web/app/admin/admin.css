@@ -195,3 +195,8 @@ details[open] > summary { margin-bottom: var(--s-3); }
 /* ---------- Preview banner (shown above the site) ---------- */
 .adm-preview-bar { position: sticky; top: 0; z-index: 100; margin: 0; padding: var(--s-2) var(--s-4); background: #fff2cc; color: #3d2c00; font-weight: 600; text-align: center; font-size: var(--fs-sm); border-bottom: 2px solid #6b4c00; }
 .adm-preview-bar a { color: inherit; }
+
+/* In-page confirmation for deletes (components/admin/ConfirmButton.tsx). */
+.admin .adm-confirm { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); padding: var(--s-2) var(--s-3); border: 1px solid #b42318; border-radius: 6px; background: #fef3f2; color: #7a271a; font-size: var(--fs-sm); }
+.admin .btn--danger { background: #b42318; border-color: #b42318; color: #fff; }
+.admin .btn--danger:hover, .admin .btn--danger:focus-visible { background: #912018; border-color: #912018; }

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { ConfirmButton } from "@/components/admin/ConfirmButton";
 import { deleteMedia, updateMedia, uploadMedia } from "../media-actions";
 
 type Item = { id: number; url: string; alt: string; caption: string; width: number | null; height: number | null; mime: string; size: number | null; created: string };
@@ -108,16 +109,17 @@ export function MediaLibrary({ items }: { items: Item[] }) {
 									Save
 								</button>
 							</form>
-							<form
-								onSubmit={(e) => {
-									e.preventDefault();
-									if (window.confirm("Delete this file permanently?")) run(deleteMedia, e.currentTarget, "File deleted.");
-								}}
-							>
+							<form id={`delete-${m.id}`} onSubmit={(e) => e.preventDefault()}>
 								<input type="hidden" name="id" value={m.id} />
-								<button className="adm-link adm-link--danger" type="submit" disabled={busy}>
-									Delete file
-								</button>
+								<ConfirmButton
+									label="Delete file"
+									question="Delete this file permanently?"
+									busy={busy}
+									onConfirm={() => {
+										const form = document.getElementById(`delete-${m.id}`) as HTMLFormElement | null;
+										if (form) run(deleteMedia, form, "File deleted.");
+									}}
+								/>
 							</form>
 						</details>
 					</li>
