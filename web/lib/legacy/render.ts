@@ -5,6 +5,8 @@
  */
 import "server-only";
 import { db } from "@/lib/db";
+import { getSettings } from "@/lib/settings";
+import { applySettings } from "./apply-settings";
 import { wireForms } from "./forms";
 import templates from "./templates.json";
 
@@ -180,10 +182,16 @@ export function fillCards(html: string, stories: Map<number, Story> | ((slot: nu
 
 /* ---------- Pages ---------- */
 
-/** Header and footer around a page's middle part, all slots filled. */
+/** Header and footer around a page's middle part, all slots filled, with the admin's site settings applied. */
 export async function renderPage(main: string, extra: Record<string, string> = {}): Promise<string> {
 	let html = `${T.chrome.top}\n${main}\n${T.chrome.bottom}`;
 	for (const [k, v] of Object.entries(extra)) html = html.split(`{{${k}}}`).join(v);
 	html = html.replace(/\{\{today\}\}/g, today());
-	return wireForms(fillCards(html, await resolveSlots(html)));
+	const [slots, settings] = await Promise.all([resolveSlots(html), getSettings()]);
+	const f = settings.forms;
+	return wireForms(applySettings(fillCards(html, slots), settings), {
+		contact: f.contactConfirmation,
+		contributor: f.contributorConfirmation,
+		newsletter: f.newsletterConfirmation,
+	});
 }

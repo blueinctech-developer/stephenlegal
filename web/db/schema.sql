@@ -98,3 +98,36 @@ create table if not exists submissions (
 	read_at timestamptz,
 	created_at timestamptz not null default now()
 );
+
+-- Added with the full WordPress replacement (see WORDPRESS-AUDIT.md). Safe to re-run.
+
+-- Reader view counts, carried over from the theme's counter (_empath_views_count).
+alter table posts add column if not exists views integer not null default 0;
+
+-- Enquiry handling: a status, private notes, and when they last changed.
+alter table submissions add column if not exists status text not null default 'new';
+alter table submissions add column if not exists notes text not null default '';
+alter table submissions add column if not exists updated_at timestamptz not null default now();
+do $$ begin
+	alter table submissions add constraint submissions_status check (status in ('new', 'in_progress', 'resolved', 'spam'));
+exception when duplicate_object then null; end $$;
+create index if not exists submissions_created on submissions (created_at desc);
+
+-- Site-wide settings edited in the admin (contact details, social links, menus, forms).
+create table if not exists settings (
+	key text primary key,
+	value jsonb not null,
+	updated_at timestamptz not null default now(),
+	updated_by integer references users(id) on delete set null
+);
+
+-- What was changed in the admin, by whom.
+create table if not exists activity (
+	id serial primary key,
+	user_id integer references users(id) on delete set null,
+	user_name text not null default '',
+	action text not null,
+	target text not null default '',
+	created_at timestamptz not null default now()
+);
+create index if not exists activity_created on activity (created_at desc);

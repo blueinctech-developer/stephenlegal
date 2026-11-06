@@ -126,7 +126,9 @@
 	if (!wrap) return;
 	const text = (s) => { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; };
 	if (q.get("sent")) {
-		wrap.outerHTML = `<div id="gform_confirmation_wrapper_${id}" class="gform_confirmation_wrapper"><div id="gform_confirmation_message_${id}" class="gform_confirmation_message_${id} gform_confirmation_message" role="status">Thanks for contacting us! We will get in touch with you shortly.</div></div>`;
+		// Each form's thank-you text comes from Admin → Settings (data-confirmation on the form).
+		const thanks = wrap.querySelector("form")?.dataset.confirmation || "Thanks for contacting us! We will get in touch with you shortly.";
+		wrap.outerHTML = `<div id="gform_confirmation_wrapper_${id}" class="gform_confirmation_wrapper"><div id="gform_confirmation_message_${id}" class="gform_confirmation_message_${id} gform_confirmation_message" role="status">${text(thanks)}</div></div>`;
 		document.getElementById(`gform_confirmation_wrapper_${id}`)?.scrollIntoView({ block: "center" });
 	} else if (q.get("error")) {
 		wrap.insertAdjacentHTML("afterbegin", `<div class="gform_validation_errors" role="alert"><h2 class="gform_submission_error">${text(q.get("error"))}</h2></div>`);
@@ -180,4 +182,13 @@
 			...(thumbs && { thumbs: { swiper: thumbs } }),
 		});
 	}
+})();
+
+/* Article view counter (app/api/views/), as the theme counted reads. */
+(() => {
+	const id = /\bpostid-(\d+)\b/.exec(document.body.className)?.[1];
+	if (!id || !document.body.classList.contains("single-post") || location.pathname.startsWith("/admin/")) return;
+	try {
+		navigator.sendBeacon(`/api/views/${id}/`);
+	} catch {}
 })();

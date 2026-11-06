@@ -4,6 +4,7 @@ import { CONTACT } from "@/lib/config";
 import { db } from "@/lib/db";
 import { FORMS, formatSubmission, type FormKind, type FormValues } from "@/lib/forms";
 import { sendMail } from "@/lib/mail";
+import { getSettings } from "@/lib/settings";
 
 // Best effort: limits one visitor to a few messages per window on each running server.
 const WINDOW_MS = 10 * 60 * 1000;
@@ -32,15 +33,30 @@ export async function deliver(kind: InboxKind, values: FormValues, ip: string): 
 	} catch (err) {
 		console.error(`[form] ${kind} could not be stored`, err);
 	}
+	const { forms } = await getSettings();
 	let emailed = false;
 	try {
 		const subject = kind === "newsletter" ? `Newsletter sign-up: ${values.email}` : `${FORMS[kind].subject}: ${values.name.replace(/\s+/g, " ")}`;
 		const text = kind === "newsletter" ? `Email: ${values.email}` : formatSubmission(FORMS[kind], values);
-		await sendMail({ subject, text, replyTo: values.email });
+		await sendMail({ subject, text, replyTo: values.email, ...(forms.notifyTo && { to: forms.notifyTo }) });
 		emailed = true;
 		if (storedId) await db()`update submissions set email_sent = true where id = ${storedId}`;
 	} catch (err) {
 		console.error(`[form] ${kind} could not be emailed`, err);
+	}
+	// The Contact form's automatic reply to the visitor, as Gravity Forms sent it. Best effort.
+	if (kind === "contact" && forms.autoReply.enabled && values.email) {
+		try {
+			const name = values.name.split(/\s+/)[0] || "there";
+			await sendMail({
+				to: values.email,
+				replyTo: forms.notifyTo || CONTACT.email,
+				subject: forms.autoReply.subject,
+				text: forms.autoReply.body.replace(/\{name\}/g, name),
+			});
+		} catch (err) {
+			console.error("[form] automatic reply not sent", err);
+		}
 	}
 	if (storedId || emailed) return null;
 	return `Sorry, your message couldn’t be sent just now. Please try again, or email ${CONTACT.email} or call ${CONTACT.phone}.`;

@@ -9,6 +9,8 @@ import { avatarOf, badges, esc, fillCards, renderPage, T, wpDate, type Story } f
 
 /* ---------- Article ---------- */
 
+const VIEWS_ICON = `<svg width="10" height="14" viewBox="0 0 10 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.99219 13V5.5" stroke="#585858" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.98438 13V1" stroke="#585858" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 13V10" stroke="#585858" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
 const cut = (s: string, n: number) => {
 	const w = s.trim().split(/\s+/);
 	return w.length > n ? `${w.slice(0, n).join(" ")}...` : s;
@@ -53,7 +55,10 @@ function share(post: Post): string {
 
 export async function renderSingle(post: Post): Promise<string> {
 	const sql = db();
-	const [avatar] = await sql<{ avatar_url: string | null }[]>`select avatar_url from authors where slug = ${post.authorInfo.slug}`;
+	const [[avatar], [counter]] = await Promise.all([
+		sql<{ avatar_url: string | null }[]>`select avatar_url from authors where slug = ${post.authorInfo.slug}`,
+		sql<{ views: number }[]>`select views from posts where id = ${post.id}`,
+	]);
 	const classes = [
 		`post-${post.id}`,
 		"post",
@@ -73,6 +78,8 @@ export async function renderSingle(post: Post): Promise<string> {
 		"post.authorHref": `/author/${post.authorInfo.slug}/`,
 		"post.author": esc(post.author),
 		"post.date": wpDate(new Date(post.date)),
+		// The theme's view counter, carried over from WordPress and counted on (app/api/views/).
+		"post.views": `<li class="view-wrapper"> ${VIEWS_ICON} <span class="view-ct">${(counter?.views ?? 0).toLocaleString("en-US")} Views</span></li>`,
 		"post.excerpt": esc(post.excerpt),
 		"post.thumb": post.image ? `<img src="${esc(post.image.url)}" class="img-fluid wp-post-image" alt="${esc(post.image.alt || post.title)}">` : "",
 		"post.content": prepareContent(post.contentHtml).html,
@@ -81,7 +88,7 @@ export async function renderSingle(post: Post): Promise<string> {
 		"post.neighbours": await neighbours(post),
 		"post.href": post.href,
 	};
-	let main = T.single.main.replace(/\{\{post\.cats\|([^|]*)\|([^|}]*)\|([^}]*)\}\}/, (_m, cls: string, prefix: string, style: string) =>
+	let main = T.single.main.replace("{{post.date}}</li>", `{{post.date}}</li>\n{{post.views}}`).replace(/\{\{post\.cats\|([^|]*)\|([^|}]*)\|([^}]*)\}\}/, (_m, cls: string, prefix: string, style: string) =>
 		badges(post.categories, cls, prefix, style),
 	);
 	// The tags block is left out entirely when an article has none.
