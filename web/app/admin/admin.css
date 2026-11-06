@@ -200,3 +200,27 @@ details[open] > summary { margin-bottom: var(--s-3); }
 .admin .adm-confirm { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); padding: var(--s-2) var(--s-3); border: 1px solid #b42318; border-radius: 6px; background: #fef3f2; color: #7a271a; font-size: var(--fs-sm); }
 .admin .btn--danger { background: #b42318; border-color: #b42318; color: #fff; }
 .admin .btn--danger:hover, .admin .btn--danger:focus-visible { background: #912018; border-color: #912018; }
+
+/* Settings (app/admin/(panel)/settings/). */
+.admin .adm-settings { margin-bottom: var(--s-6); }
+.admin .adm-settings .adm-stack { margin-top: var(--s-4); }
+.admin .adm-menu-table td { padding: var(--s-2); vertical-align: middle; }
+.admin .adm-menu-table input:not([type="checkbox"]), .admin .adm-menu-table select { width: 100%; min-width: 9rem; }
+.admin .adm-menu-table .adm-input-num { min-width: 0; width: 4.5rem; }
+.admin .adm-fieldset { border: 1px solid var(--c-rule); padding: var(--s-4); display: grid; gap: var(--s-3); justify-self: stretch; }
+.admin .adm-fieldset legend { font-weight: 700; padding: 0 var(--s-2); }
+.admin .adm-reset { margin-top: var(--s-3); }
+
+/* Messages: filters, status pills, notes (app/admin/(panel)/messages/). */
+.admin .adm-filters { display: flex; flex-wrap: wrap; align-items: end; gap: var(--s-3) var(--s-4); margin: var(--s-4) 0; }
+.admin .adm-filters .adm-field { min-width: 12rem; flex: 1 1 14rem; }
+.admin .adm-seg { flex-wrap: wrap; }
+.admin .adm-tally { display: inline-block; min-width: 1.5em; padding: 0 0.4em; margin-left: 0.25em; border-radius: 999px; background: var(--c-mist); font-size: var(--fs-xs); text-align: center; }
+.admin .adm-pill--new { background: #e0f2fe; color: #075985; }
+.admin .adm-pill--in_progress { background: #fef3c7; color: #78350f; }
+.admin .adm-pill--resolved { background: #dcfce7; color: #14532d; }
+.admin .adm-pill--spam { background: #f1f1f1; color: #3f3f46; }
+.admin .adm-enquiry { display: grid; grid-template-columns: minmax(9rem, 12rem) 1fr auto; gap: var(--s-3); align-items: end; margin: var(--s-4) 0; }
+@media (max-width: 640px) { .admin .adm-enquiry { grid-template-columns: 1fr; } }
+.admin .adm-pre { white-space: pre-wrap; }
+.admin .adm-confirm-details[open] > summary { margin-bottom: var(--s-2); }

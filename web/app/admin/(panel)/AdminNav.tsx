@@ -15,7 +15,7 @@ const ITEMS = [
 
 export function AdminNav({ isAdmin, unread }: { isAdmin: boolean; unread: number }) {
 	const path = usePathname();
-	const items = isAdmin ? [...ITEMS, { href: "/admin/users/", label: "Users" }] : ITEMS;
+	const items = isAdmin ? [...ITEMS, { href: "/admin/users/", label: "Users" }, { href: "/admin/settings/", label: "Settings" }] : ITEMS;
 	return (
 		<nav aria-label="Admin">
 			<ul className="adm-nav">

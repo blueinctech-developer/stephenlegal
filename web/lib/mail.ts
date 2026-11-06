@@ -19,11 +19,12 @@ export const mailConfigured = Boolean(SMTP.host && SMTP.user && SMTP.pass);
 
 let transport: Transporter | null = null;
 
-export async function sendMail({ subject, text, replyTo }: { subject: string; text: string; replyTo: string }): Promise<void> {
+/** `to` defaults to FORM_TO (info@stephenlegal.ng); Admin → Settings can name another address. */
+export async function sendMail({ subject, text, replyTo, to = TO }: { subject: string; text: string; replyTo: string; to?: string }): Promise<void> {
 	if (!mailConfigured) {
 		if (process.env.NODE_ENV !== "production") {
 			// Local development without SMTP settings: show the message instead of sending it.
-			console.info(`[form] Would email ${TO}\nSubject: ${subject}\nReply-To: ${replyTo}\n\n${text}`);
+			console.info(`[form] Would email ${to}\nSubject: ${subject}\nReply-To: ${replyTo}\n\n${text}`);
 			return;
 		}
 		throw new Error("SMTP is not configured");
@@ -36,5 +37,5 @@ export async function sendMail({ subject, text, replyTo }: { subject: string; te
 		disableFileAccess: true,
 		disableUrlAccess: true,
 	});
-	await transport.sendMail({ from: { name: "Stephen Legal website", address: FROM! }, to: TO, replyTo, subject, text });
+	await transport.sendMail({ from: { name: "Stephen Legal website", address: FROM! }, to, replyTo, subject, text });
 }

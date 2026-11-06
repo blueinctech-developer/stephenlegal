@@ -9,6 +9,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { toSlug } from "@/lib/admin-format";
+import { logActivity } from "@/lib/activity";
 import { endOtherSessions, requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { hashPassword, passwordProblem, verifyPassword } from "@/lib/password";
@@ -82,26 +83,57 @@ export async function deleteAuthor(form: FormData): Promise<void> {
 
 /* ---------- Messages from the site's forms ---------- */
 
+/** The Messages screen's filters, kept across actions ("?status=new&q=…"). */
+const messagesUrl = (form: FormData, extra = "") => {
+	const query = String(form.get("return") ?? "");
+	const params = new URLSearchParams(query.startsWith("?") ? query.slice(1) : "");
+	params.delete("ok");
+	params.delete("error");
+	if (extra) for (const [k, v] of new URLSearchParams(extra)) params.set(k, v);
+	const qs = params.toString();
+	return `/admin/messages/${qs ? `?${qs}` : ""}`;
+};
+
+const STATUSES = ["new", "in_progress", "resolved", "spam"];
+
 export async function markMessage(form: FormData): Promise<void> {
 	await requireUser();
 	const id = Number(form.get("id"));
 	const read = form.get("read") === "1";
 	await db()`update submissions set read_at = ${read ? new Date() : null} where id = ${id}`;
 	revalidatePath("/admin/", "layout");
-	redirect(`/admin/messages/${form.get("filter") === "unread" ? "?filter=unread" : ""}`);
+	redirect(messagesUrl(form));
+}
+
+/** Status and private notes for one enquiry; opening it to work on it also marks it read. */
+export async function updateMessage(form: FormData): Promise<void> {
+	const user = await requireUser();
+	const id = Number(form.get("id"));
+	const status = String(form.get("status") ?? "");
+	if (!STATUSES.includes(status)) redirect(messagesUrl(form, `error=${encodeURIComponent("Choose a status.")}`));
+	const notes = str(form, "notes", 5000);
+	const [row] = await db()<{ name: string }[]>`
+		update submissions set status = ${status}, notes = ${notes}, updated_at = now(), read_at = coalesce(read_at, now())
+		where id = ${id} returning coalesce(data->>'name', data->>'email', '') as name`;
+	if (!row) redirect(messagesUrl(form, `error=${encodeURIComponent("That message no longer exists.")}`));
+	await logActivity(user, "Updated enquiry", `${row.name} → ${status.replace("_", " ")}`);
+	revalidatePath("/admin/", "layout");
+	redirect(messagesUrl(form, `ok=${encodeURIComponent("Saved.")}`) + `#m${id}`);
 }
 
 export async function deleteMessage(form: FormData): Promise<void> {
-	await requireUser();
-	await db()`delete from submissions where id = ${Number(form.get("id"))}`;
+	const user = await requireUser();
+	const [row] = await db()<{ name: string }[]>`
+		delete from submissions where id = ${Number(form.get("id"))} returning coalesce(data->>'name', data->>'email', '') as name`;
+	if (row) await logActivity(user, "Deleted enquiry", row.name);
 	revalidatePath("/admin/", "layout");
-	back("/admin/messages/", "ok", "Message deleted.");
+	redirect(messagesUrl(form, `ok=${encodeURIComponent("Message deleted.")}`));
 }
 
 /* ---------- Users (administrators only) ---------- */
 
 export async function createUser(form: FormData): Promise<void> {
-	await requireUser("admin");
+	const me = await requireUser("admin");
 	const name = str(form, "name", 100);
 	const email = str(form, "email", 200).toLowerCase();
 	const role = form.get("role") === "admin" ? "admin" : "editor";
@@ -116,6 +148,7 @@ export async function createUser(form: FormData): Promise<void> {
 		if (isUniqueViolation(e)) back("/admin/users/", "error", "There is already an account with that email.");
 		throw e;
 	}
+	await logActivity(me, "Created user", `${name} (${role})`);
 	back("/admin/users/", "ok", `Account created for ${name}. Share the password with them privately; they can change it under Account.`);
 }
 
@@ -126,7 +159,8 @@ export async function updateUser(form: FormData): Promise<void> {
 	const authorId = Number(form.get("author_id")) || null;
 	const sql = db();
 	if (id === me.id && role !== "admin") back("/admin/users/", "error", "You can’t remove your own administrator role.");
-	await sql`update users set role = ${role}, author_id = ${authorId} where id = ${id}`;
+	const [changed] = await sql<{ name: string }[]>`update users set role = ${role}, author_id = ${authorId} where id = ${id} returning name`;
+	if (changed) await logActivity(me, "Changed user", `${changed.name} (${role})`);
 	back("/admin/users/", "ok", "Saved.");
 }
 
@@ -137,7 +171,8 @@ export async function deleteUser(form: FormData): Promise<void> {
 	const sql = db();
 	const [{ admins }] = await sql<{ admins: string }[]>`select count(*) as admins from users where role = 'admin' and id <> ${id}`;
 	if (Number(admins) === 0) back("/admin/users/", "error", "Keep at least one administrator.");
-	await sql`delete from users where id = ${id}`;
+	const [gone] = await sql<{ name: string }[]>`delete from users where id = ${id} returning name`;
+	if (gone) await logActivity(me, "Deleted user", gone.name);
 	back("/admin/users/", "ok", "Account deleted. That person is signed out.");
 }
 

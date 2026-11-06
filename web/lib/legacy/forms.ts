@@ -16,11 +16,13 @@ export const FIELD_NAMES: Record<InboxKind, Record<string, string>> = {
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
 /** Points a Gravity Form in the old markup at the new endpoint, drops its WordPress-only hidden fields and adds a spam trap. */
-export function wireForms(html: string): string {
+export function wireForms(html: string, confirmations: Partial<Record<InboxKind, string>> = {}): string {
 	return html.replace(/<form\b([^>]*?)id='gform_(\d+)'([^>]*)>([\s\S]*?)<\/form>/g, (whole, a: string, id: string, b: string, inner: string) => {
 		const kind = (Object.keys(GF_IDS) as InboxKind[]).find((k) => GF_IDS[k] === Number(id));
 		if (!kind) return whole;
-		const attrs = `${a}id='gform_${id}'${b}`.replace(/action='[^']*'/, `action='/api/forms/${kind}/'`).replace(/ novalidate/, "");
+		// The thank-you text shown after sending (public/legacy/site.js reads it).
+		const thanks = confirmations[kind] ? ` data-confirmation='${esc(confirmations[kind]!)}'` : "";
+		const attrs = `${a}id='gform_${id}'${b}${thanks}`.replace(/action='[^']*'/, `action='/api/forms/${kind}/'`).replace(/ novalidate/, "");
 		const body = inner
 			.replace(/<input type='hidden'[^>]*>/g, "")
 			.replace(/ onclick='[^']*'/g, "")

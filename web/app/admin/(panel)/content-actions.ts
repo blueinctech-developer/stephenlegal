@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { fromLagosInput, RESERVED_SLUGS, toSlug } from "@/lib/admin-format";
+import { logActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { cleanArticleHtml } from "@/lib/sanitize";
@@ -17,7 +18,7 @@ function refreshSite() {
 const str = (form: FormData, key: string, max: number) => String(form.get(key) ?? "").trim().slice(0, max);
 
 export async function savePost(_prev: SaveState, form: FormData): Promise<SaveState> {
-	await requireUser();
+	const user = await requireUser();
 	const sql = db();
 	const id = Number(form.get("id")) || null;
 	const type = form.get("type") === "page" ? "page" : "post";
@@ -97,6 +98,7 @@ export async function savePost(_prev: SaveState, form: FormData): Promise<SaveSt
 	});
 
 	refreshSite();
+	await logActivity(user, id ? "Updated" : "Created", `${type === "page" ? "Page" : "Article"}: ${title}`);
 	if (!id) redirect(`/admin/${type === "page" ? "pages" : "posts"}/${postId}/?saved=1`);
 	return {
 		status: "saved",
@@ -107,9 +109,10 @@ export async function savePost(_prev: SaveState, form: FormData): Promise<SaveSt
 }
 
 export async function deletePost(form: FormData): Promise<void> {
-	await requireUser();
+	const user = await requireUser();
 	const id = Number(form.get("id"));
-	const [row] = await db()<{ type: string }[]>`delete from posts where id = ${id} returning type`;
+	const [row] = await db()<{ type: string; title: string }[]>`delete from posts where id = ${id} returning type, title`;
+	if (row) await logActivity(user, "Deleted", `${row.type === "page" ? "Page" : "Article"}: ${row.title}`);
 	refreshSite();
 	redirect(`/admin/${row?.type === "page" ? "pages" : "posts"}/?deleted=1`);
 }

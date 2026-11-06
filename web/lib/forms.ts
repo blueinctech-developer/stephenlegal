@@ -44,7 +44,8 @@ export const FORMS: Record<FormKind, FormDef> = {
 				required: true,
 				hint: "Please let us know what’s on your mind. Have a question for us? Ask away.",
 				minLength: 10,
-				maxLength: 5000,
+				// As on the WordPress form (Gravity Forms, Contact, field 3).
+				maxLength: 600,
 			},
 		],
 	},

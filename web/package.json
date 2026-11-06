@@ -12,6 +12,7 @@
     "db:local": "node scripts/db-local.ts",
     "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate-schema.ts",
     "import:wordpress": "node --env-file-if-exists=.env.local scripts/import-wordpress.ts",
+    "import:views": "node --env-file-if-exists=.env.local scripts/import-wxr-views.ts",
     "admin:create": "node --env-file-if-exists=.env.local scripts/create-admin.ts"
   },
   "dependencies": {

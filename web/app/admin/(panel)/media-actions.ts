@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import sharp from "sharp";
 import { toSlug } from "@/lib/admin-format";
+import { logActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { deleteFile, putFile } from "@/lib/storage";
@@ -17,7 +18,7 @@ const TYPES: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png",
 const MAX_WIDTH = 2400;
 
 export async function uploadMedia(form: FormData): Promise<UploadResult> {
-	await requireUser();
+	const user = await requireUser();
 	const file = form.get("file");
 	if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Choose a file to upload." };
 	if (file.size > MAX_BYTES) return { ok: false, error: "That file is larger than 10 MB." };
@@ -55,6 +56,7 @@ export async function uploadMedia(form: FormData): Promise<UploadResult> {
 		insert into media (url, storage_key, mime, width, height, size_bytes, alt)
 		values (${stored.url}, ${stored.key}, ${file.type}, ${width}, ${height}, ${body.length}, ${alt})
 		returning id, url, alt, caption, width, height, mime, created_at`;
+	await logActivity(user, "Uploaded file", stored.key);
 	revalidatePath("/admin/media/");
 	return { ok: true, item: toItem(row) };
 }
@@ -74,7 +76,7 @@ export async function updateMedia(form: FormData): Promise<{ ok: boolean; error?
 
 /** Deletes a file only when no article or page uses it. */
 export async function deleteMedia(form: FormData): Promise<{ ok: boolean; error?: string }> {
-	await requireUser();
+	const user = await requireUser();
 	const id = Number(form.get("id"));
 	const sql = db();
 	const [m] = await sql<{ url: string; storage_key: string }[]>`select url, storage_key from media where id = ${id}`;
@@ -86,6 +88,7 @@ export async function deleteMedia(form: FormData): Promise<{ ok: boolean; error?
 	}
 	await deleteFile(m.storage_key, m.url);
 	await sql`delete from media where id = ${id}`;
+	await logActivity(user, "Deleted file", m.storage_key);
 	revalidatePath("/admin/media/");
 	return { ok: true };
 }

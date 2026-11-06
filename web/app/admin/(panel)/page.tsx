@@ -6,21 +6,25 @@ import { db } from "@/lib/db";
 export default async function Dashboard({ searchParams }: { searchParams: Promise<{ denied?: string }> }) {
 	const user = await requireUser();
 	const sql = db();
-	const [[counts], recent, drafts, messages] = await Promise.all([
-		sql<{ published: string; scheduled: string; drafts: string; pages: string; media: string; unread: string }[]>`
+	const [[counts], recent, drafts, messages, activity] = await Promise.all([
+		sql<{ published: string; scheduled: string; drafts: string; pages: string; media: string; unread: string; open: string; views: string }[]>`
 			select
 				(select count(*) from posts where type = 'post' and status = 'published' and published_at <= now()) as published,
 				(select count(*) from posts where type = 'post' and status = 'published' and published_at > now()) as scheduled,
 				(select count(*) from posts where type = 'post' and status = 'draft') as drafts,
 				(select count(*) from posts where type = 'page') as pages,
 				(select count(*) from media) as media,
-				(select count(*) from submissions where read_at is null) as unread`,
+				(select count(*) from submissions where read_at is null) as unread,
+				(select count(*) from submissions where status in ('new', 'in_progress')) as open,
+				(select coalesce(sum(views), 0) from posts where type = 'post') as views`,
 		sql<{ id: number; title: string; published_at: Date }[]>`
 			select id, title, published_at from posts where type = 'post' and status = 'published' order by published_at desc limit 6`,
 		sql<{ id: number; title: string; modified_at: Date }[]>`
 			select id, title, modified_at from posts where type = 'post' and status = 'draft' order by modified_at desc limit 6`,
 		sql<{ id: number; form: string; data: Record<string, string>; created_at: Date }[]>`
 			select id, form, data, created_at from submissions where read_at is null order by created_at desc limit 5`,
+		sql<{ id: number; user_name: string; action: string; target: string; created_at: Date }[]>`
+			select id, user_name, action, target, created_at from activity order by created_at desc limit 8`,
 	]);
 	const stats = [
 		{ label: "Published articles", value: counts.published, href: "/admin/posts/?status=published" },
@@ -29,6 +33,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 		{ label: "Pages", value: counts.pages, href: "/admin/pages/" },
 		{ label: "Files", value: counts.media, href: "/admin/media/" },
 		{ label: "Unread messages", value: counts.unread, href: "/admin/messages/?filter=unread" },
+		{ label: "Open enquiries", value: counts.open, href: "/admin/messages/?status=new" },
+		{ label: "Article views", value: counts.views, href: "/admin/posts/" },
 	];
 
 	return (
@@ -88,7 +94,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 							{messages.map((m) => (
 								<li key={m.id}>
 									<Link href="/admin/messages/?filter=unread">
-										{m.data.name || "Someone"} — {m.form === "contributor" ? "contributor application" : "contact form"}
+										{m.data.name || m.data.email || "Someone"} — {m.form === "contributor" ? "contributor application" : m.form === "newsletter" ? "newsletter sign-up" : "contact form"}
 									</Link>
 									<span>{formatAdminDate(m.created_at)}</span>
 								</li>
@@ -96,6 +102,24 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 						</ul>
 					) : (
 						<p className="adm-hint">You’re all caught up.</p>
+					)}
+				</section>
+				<section className="adm-box" aria-labelledby="activity-title">
+					<h2 id="activity-title">Recent activity</h2>
+					{activity.length ? (
+						<ul className="adm-list">
+							{activity.map((a) => (
+								<li key={a.id}>
+									<span>
+										<strong>{a.user_name}</strong> {a.action.toLowerCase()}
+										{a.target && <> · {a.target}</>}
+									</span>
+									<span>{formatAdminDate(a.created_at)}</span>
+								</li>
+							))}
+						</ul>
+					) : (
+						<p className="adm-hint">Changes made in the admin will be listed here.</p>
 					)}
 				</section>
 			</div>
