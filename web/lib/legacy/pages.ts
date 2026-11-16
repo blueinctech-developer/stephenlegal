@@ -1,7 +1,7 @@
 /** Article, archive and page views in the original theme's markup. */
 import "server-only";
 import { prepareContent } from "@/lib/content";
-import { SITE_URL } from "@/lib/config";
+import { ADSENSE, SITE_URL } from "@/lib/config";
 import { db } from "@/lib/db";
 import type { Post } from "@/lib/data";
 import { contributorForm } from "./forms";
@@ -93,6 +93,12 @@ export async function renderSingle(post: Post): Promise<string> {
 	);
 	// The tags block is left out entirely when an article has none.
 	if (!post.tags.length) main = main.replace(/<div class="post_tags">[\s\S]*?\{\{post\.tags\}\}\s*<\/div>/, "");
+	// The sidebar's AdSense unit, in the Custom HTML widget it occupied on WordPress. It stays
+	// empty until the article page loads Google's script (app/(site)/[slug]/page.tsx).
+	main = main.replace(
+		/(<div id="custom_html-3"[^>]*><div class="textwidget custom-html-widget">)\s*(<\/div>)/,
+		`$1<ins class="adsbygoogle" style="display:block" data-ad-client="${ADSENSE.client}" data-ad-slot="${ADSENSE.sidebarSlot}" data-ad-format="auto" data-full-width-responsive="true"></ins>$2`,
+	);
 	return renderPage(main, values);
 }
 
