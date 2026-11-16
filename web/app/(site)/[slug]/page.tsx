@@ -5,7 +5,8 @@ import { renderSingle, renderStaticPage } from "@/lib/legacy/pages";
 import { renderPage, T } from "@/lib/legacy/render";
 import { articleSchema, jsonLd, seoMetadata } from "@/lib/seo";
 import Script from "next/script";
-import { ADSENSE, IS_PUBLIC_SITE, UNSUPPORTED_PAGES } from "@/lib/config";
+import { IS_PUBLIC_SITE, UNSUPPORTED_PAGES } from "@/lib/config";
+import { adsenseOn, getSettings } from "@/lib/settings";
 import { getPageBySlug, getPostBySlug, type Page, type Post } from "@/lib/data";
 
 export const revalidate = 300;
@@ -43,14 +44,15 @@ export default async function SlugPage({ params }: Props) {
 	if (!found) notFound();
 	if ("post" in found) {
 		const schema = jsonLd(articleSchema(found.post));
+		const { ads } = await getSettings();
 		return (
 			<>
 				{schema && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: schema }} />}
 				<LegacyPage html={await renderSingle(found.post)} bodyClass={T.single.bodyClass.replace(/postid-d+/, `postid-${found.post.id}`)} />
-				{IS_PUBLIC_SITE && (
+				{IS_PUBLIC_SITE && adsenseOn(ads) && (
 					<>
-						{/* Fills the sidebar's AdSense unit; only on the real domain, never on previews. */}
-						<Script src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE.client}`} crossOrigin="anonymous" strategy="afterInteractive" />
+						{/* Fills the sidebar's AdSense unit (Admin → Settings → Ads); only on the real domain, never on previews. */}
+						<Script src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ads.adsenseClient}`} crossOrigin="anonymous" strategy="afterInteractive" />
 						<Script id="adsense-sidebar" strategy="afterInteractive">{"(window.adsbygoogle = window.adsbygoogle || []).push({});"}</Script>
 					</>
 				)}

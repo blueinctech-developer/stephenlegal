@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { logActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { cleanMenu, safeHref, type MenuItem, type SettingKey } from "@/lib/site-settings";
+import { ADSENSE_CLIENT, ADSENSE_SLOT, cleanMenu, safeHref, type MenuItem, type SettingKey } from "@/lib/site-settings";
 
 const str = (form: FormData, key: string, max: number) => String(form.get(key) ?? "").trim().slice(0, max);
 const back = (kind: "ok" | "error", message: string, section: string): never =>
@@ -19,6 +19,7 @@ const LABELS: Record<string, string> = {
 	social: "Social links",
 	menu: "Header menu",
 	forms: "Form settings",
+	ads: "Ads",
 };
 
 /** Menu rows (position, label, link, level) → the menu tree; a sub-item joins the nearest top-level item above it. */
@@ -89,6 +90,23 @@ export async function saveSettings(form: FormData): Promise<void> {
 				newsletterConfirmation: str(form, "newsletterConfirmation", 500),
 				autoReply: { enabled: form.get("autoReplyEnabled") === "on", subject: str(form, "autoReplySubject", 200), body: str(form, "autoReplyBody", 3000) },
 			};
+			break;
+		}
+		case "ads": {
+			const adsenseEnabled = form.get("adsenseEnabled") === "on";
+			const adsenseClient = str(form, "adsenseClient", 40).replace(/^pub-/, "ca-pub-");
+			const adsenseSlot = str(form, "adsenseSlot", 30);
+			if (adsenseEnabled && !ADSENSE_CLIENT.test(adsenseClient)) back("error", "The AdSense publisher ID should look like ca-pub-1234567890123456.", section);
+			if (adsenseEnabled && !ADSENSE_SLOT.test(adsenseSlot)) back("error", "The AdSense ad slot should be the number from the ad unit’s code (data-ad-slot).", section);
+			// ads.txt is plain text: one record per line, no markup.
+			const adsTxt = String(form.get("adsTxt") ?? "").replace(/\r\n?/g, "\n").replace(/[<>]/g, "").trim().slice(0, 5000);
+			const bannerEnabled = form.get("bannerEnabled") === "on";
+			const bannerImage = str(form, "bannerImage", 500);
+			const bannerLink = str(form, "bannerLink", 300) || "#";
+			if (bannerImage && !/^(\/|https:\/\/)/.test(bannerImage)) back("error", "The banner image must be chosen from Media or start with https://.", section);
+			if (bannerEnabled && !bannerImage) back("error", "Choose a banner image, or untick “Show the banner”.", section);
+			if (!safeHref(bannerLink)) back("error", "The banner link must start with https://, / or #.", section);
+			value = { adsenseEnabled, adsenseClient, adsenseSlot, adsTxt, bannerEnabled, bannerImage, bannerLink: safeHref(bannerLink) };
 			break;
 		}
 		default:

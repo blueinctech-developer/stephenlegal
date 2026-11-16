@@ -3,6 +3,7 @@ import { mailConfigured } from "@/lib/mail";
 import { getSettings, type MenuItem } from "@/lib/settings";
 import { Flash } from "../Flash";
 import { resetSettings, saveSettings } from "../settings-actions";
+import { BannerImageField } from "./BannerImageField";
 
 /** Site-wide settings that appear on the public pages. Administrators only. */
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
@@ -109,6 +110,34 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 						<textarea id="autoReplyBody" name="autoReplyBody" rows={5} defaultValue={s.forms.autoReply.body} maxLength={3000} />
 						<p className="adm-hint">{"{name}"} is replaced by the sender’s name.</p>
 					</div>
+				</fieldset>
+			</Section>
+
+			<Section
+				id="ads"
+				title="Ads"
+				hint="The adverts in the sidebar of every article, as on the WordPress site. Ads only appear on stephenlegal.ng, never on previews or test copies."
+			>
+				<fieldset className="adm-fieldset">
+					<legend>Google AdSense</legend>
+					<label className="adm-check">
+						<input type="checkbox" name="adsenseEnabled" defaultChecked={s.ads.adsenseEnabled} /> Show the AdSense ad in the article sidebar
+					</label>
+					<Field name="adsenseClient" label="Publisher ID" value={s.ads.adsenseClient} hint="From AdSense → Account → Account information, e.g. ca-pub-1234567890123456." />
+					<Field name="adsenseSlot" label="Ad slot" value={s.ads.adsenseSlot} hint="The data-ad-slot number in the ad unit’s code (AdSense → Ads → By ad unit)." />
+				</fieldset>
+				<div className="adm-field">
+					<label htmlFor="adsTxt">ads.txt</label>
+					<textarea id="adsTxt" name="adsTxt" rows={4} defaultValue={s.ads.adsTxt} maxLength={5000} spellCheck={false} />
+					<p className="adm-hint">Published at stephenlegal.ng/ads.txt. One line per ad network, as the network gives it to you. Leave empty for no file.</p>
+				</div>
+				<fieldset className="adm-fieldset">
+					<legend>Sidebar banner</legend>
+					<label className="adm-check">
+						<input type="checkbox" name="bannerEnabled" defaultChecked={s.ads.bannerEnabled} /> Show the banner under the AdSense ad
+					</label>
+					<BannerImageField value={s.ads.bannerImage} />
+					<Field name="bannerLink" label="Banner link" value={s.ads.bannerLink} hint="Where a click on the banner goes, starting with https://. Use # for no link." />
 				</fieldset>
 			</Section>
 		</main>

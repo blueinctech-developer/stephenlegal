@@ -11,12 +11,6 @@ export const SITE_URL = trimSlash(process.env.NEXT_PUBLIC_SITE_URL || "https://s
 /** Only the real domain is indexed and shows ads; previews and test copies do neither. */
 export const IS_PUBLIC_SITE = new URL(SITE_URL).hostname === "stephenlegal.ng";
 
-/**
- * Google AdSense, as on the old site: one responsive unit ("Legal Info SLB") in the
- * article sidebar. public/ads.txt names the same publisher.
- */
-export const ADSENSE = { client: "ca-pub-9728842251129504", sidebarSlot: "4484731570" };
-
 export const SITE_NAME = "Stephen Legal";
 
 /** The publication's tagline, as it read on the old site. */
