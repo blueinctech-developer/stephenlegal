@@ -21,7 +21,8 @@ const nextConfig: NextConfig = {
 	},
 	images: {
 		remotePatterns: [
-			// Uploaded files in production (Vercel Blob).
+			// Uploaded files in production: the S3 media bucket (lib/storage.ts), and Vercel Blob before the move.
+			{ protocol: "https", hostname: "**.amazonaws.com", pathname: "/uploads/**" },
 			{ protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
 			// Only used if the import was run with --media=link.
 			{ protocol: "https", hostname: "stephenlegal.ng", pathname: "/wp-content/uploads/**" },

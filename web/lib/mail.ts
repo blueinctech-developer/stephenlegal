@@ -9,10 +9,11 @@ import { CONTACT } from "./config";
  * settings (SMTP_*). With neither, local development prints the message instead.
  */
 
+// One AWS access key can serve both S3 (media) and SES, so the SES_* values fall back to the S3_* ones.
 const SES = {
-	region: process.env.SES_REGION,
-	accessKeyId: process.env.SES_ACCESS_KEY_ID,
-	secretAccessKey: process.env.SES_SECRET_ACCESS_KEY,
+	region: process.env.SES_REGION || process.env.S3_REGION,
+	accessKeyId: process.env.SES_ACCESS_KEY_ID || process.env.S3_ACCESS_KEY_ID,
+	secretAccessKey: process.env.SES_SECRET_ACCESS_KEY || process.env.S3_SECRET_ACCESS_KEY,
 	configurationSet: process.env.SES_CONFIGURATION_SET || undefined,
 };
 const SMTP = {
