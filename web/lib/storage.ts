@@ -16,13 +16,29 @@ import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client
 export const LOCAL_UPLOADS = path.resolve(process.cwd(), ".data", "uploads");
 const blobConfigured = () => Boolean(process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN);
 
-const S3_SETTINGS = ["S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_MEDIA_BUCKET"] as const;
-export const s3Configured = () => S3_SETTINGS.every((name) => Boolean(process.env[name]));
+/**
+ * One AWS access key serves both S3 (media) and SES (email), so it may be saved under either
+ * name: each S3_* value falls back to its SES_* twin (lib/mail.ts does the reverse).
+ */
+const aws = {
+	region: () => process.env.S3_REGION || process.env.SES_REGION || "us-east-1",
+	accessKeyId: () => process.env.S3_ACCESS_KEY_ID || process.env.SES_ACCESS_KEY_ID || "",
+	secretAccessKey: () => process.env.S3_SECRET_ACCESS_KEY || process.env.SES_SECRET_ACCESS_KEY || "",
+	bucket: () => process.env.S3_MEDIA_BUCKET || "",
+};
+
+/** Each S3 setting, with the names it may be saved under (for Admin → Media). */
+const S3_SETTINGS: [string, () => string][] = [
+	["S3_ACCESS_KEY_ID (or SES_ACCESS_KEY_ID)", aws.accessKeyId],
+	["S3_SECRET_ACCESS_KEY (or SES_SECRET_ACCESS_KEY)", aws.secretAccessKey],
+	["S3_MEDIA_BUCKET", aws.bucket],
+];
+export const s3Configured = () => S3_SETTINGS.every(([, value]) => Boolean(value()));
 
 /** Where new uploads go, and which S3 settings are missing (names only, never values), for Admin → Media. */
 export function storageStatus(): { store: "s3" | "blob" | "local"; bucket?: string; missingS3: string[] } {
-	const missingS3 = S3_SETTINGS.filter((name) => !process.env[name]);
-	if (!missingS3.length) return { store: "s3", bucket: process.env.S3_MEDIA_BUCKET, missingS3 };
+	const missingS3 = S3_SETTINGS.filter(([, value]) => !value()).map(([name]) => name);
+	if (!missingS3.length) return { store: "s3", bucket: aws.bucket(), missingS3 };
 	return { store: blobConfigured() ? "blob" : "local", missingS3 };
 }
 
@@ -30,16 +46,15 @@ export function storageStatus(): { store: "s3" | "blob" | "local"; bucket?: stri
 export function mediaBaseUrl(): string {
 	const set = (process.env.NEXT_PUBLIC_MEDIA_URL || "").replace(/\/+$/, "");
 	if (set) return set;
-	const region = process.env.S3_REGION || "us-east-1";
-	return `https://${process.env.S3_MEDIA_BUCKET}.s3.${region}.amazonaws.com`;
+	return `https://${aws.bucket()}.s3.${aws.region()}.amazonaws.com`;
 }
 
 let s3: S3Client | null = null;
 export function s3Client(): S3Client {
 	s3 ??= new S3Client({
-		region: process.env.S3_REGION || "us-east-1",
+		region: aws.region(),
 		endpoint: process.env.S3_ENDPOINT || undefined,
-		credentials: { accessKeyId: process.env.S3_ACCESS_KEY_ID!, secretAccessKey: process.env.S3_SECRET_ACCESS_KEY! },
+		credentials: { accessKeyId: aws.accessKeyId(), secretAccessKey: aws.secretAccessKey() },
 	});
 	return s3;
 }
