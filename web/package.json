@@ -16,6 +16,7 @@
     "admin:create": "node --env-file-if-exists=.env.local scripts/create-admin.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-sesv2": "3.1158.0",
     "@tiptap/extension-image": "3.32.0",
     "@tiptap/extension-table": "3.32.0",
     "@tiptap/pm": "3.32.0",
