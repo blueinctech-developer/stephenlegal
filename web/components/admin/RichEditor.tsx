@@ -108,8 +108,7 @@ function Toolbar({ editor }: { editor: Editor }) {
 		else chain.setHeading({ level: Number(value.slice(1)) as 2 | 3 | 4 }).run();
 	};
 
-	const applyLink = (e: React.FormEvent) => {
-		e.preventDefault();
+	const applyLink = () => {
 		const url = linkInput.current?.value.trim() ?? "";
 		if (!url) editor.chain().focus().extendMarkRange("link").unsetLink().run();
 		else editor.chain().focus().extendMarkRange("link").setLink({ href: /^(https?:|mailto:|tel:|\/)/.test(url) ? url : `https://${url}` }).run();
@@ -158,7 +157,9 @@ function Toolbar({ editor }: { editor: Editor }) {
 			{btn("Redo", undefined, () => editor.chain().focus().redo().run(), "↷", !state.canRedo)}
 
 			{linkOpen && (
-				<form className="adm-linkbox" onSubmit={applyLink}>
+				// Not a <form>: it sits inside the article's form, and a nested form makes Enter
+				// submit as a page load, losing unsaved work. Enter and Apply are handled here instead.
+				<div className="adm-linkbox" role="group" aria-label="Link">
 					<label htmlFor="adm-link-url">Link address</label>
 					<input
 						id="adm-link-url"
@@ -168,13 +169,19 @@ function Toolbar({ editor }: { editor: Editor }) {
 						defaultValue={(editor.getAttributes("link").href as string) ?? ""}
 						placeholder="https://… or /article-address/"
 						autoFocus
-						onKeyDown={(e) => e.key === "Escape" && setLinkOpen(false)}
+						onKeyDown={(e) => {
+							if (e.key === "Escape") setLinkOpen(false);
+							if (e.key === "Enter") {
+								e.preventDefault();
+								applyLink();
+							}
+						}}
 					/>
-					<button type="submit" className="btn">
+					<button type="button" className="btn" onClick={applyLink}>
 						Apply
 					</button>
 					<span className="adm-hint">Leave empty to remove the link.</span>
-				</form>
+				</div>
 			)}
 			<MediaPicker open={pickerOpen} onClose={() => setPickerOpen(false)} onPick={insertImage} />
 		</div>
