@@ -13,9 +13,12 @@
     "db:migrate": "node --env-file-if-exists=.env.local scripts/migrate-schema.ts",
     "import:wordpress": "node --env-file-if-exists=.env.local scripts/import-wordpress.ts",
     "import:views": "node --env-file-if-exists=.env.local scripts/import-wxr-views.ts",
-    "admin:create": "node --env-file-if-exists=.env.local scripts/create-admin.ts"
+    "admin:create": "node --env-file-if-exists=.env.local scripts/create-admin.ts",
+    "media:to-s3": "node --env-file-if-exists=.env.local scripts/move-media-to-s3.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1158.0",
+    "@aws-sdk/client-sesv2": "3.1158.0",
     "@tiptap/extension-image": "3.32.0",
     "@tiptap/extension-table": "3.32.0",
     "@tiptap/pm": "3.32.0",

@@ -1,5 +1,5 @@
 import { requireUser } from "@/lib/auth";
-import { mailConfigured } from "@/lib/mail";
+import { mailProvider } from "@/lib/mail";
 import { getSettings, type MenuItem } from "@/lib/settings";
 import { Flash } from "../Flash";
 import { resetSettings, saveSettings } from "../settings-actions";
@@ -93,7 +93,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 			<Section
 				id="forms"
 				title="Forms"
-				hint={`Contact, Become a Contributor and the footer newsletter. Messages are always saved under Messages.${mailConfigured ? "" : " Email isn’t set up yet (SMTP settings), so nothing is emailed until it is."}`}
+				hint={`Contact, Become a Contributor and the footer newsletter. Messages are always saved under Messages.${
+					mailProvider === "ses"
+						? " Email is sent through Amazon SES."
+						: mailProvider === "smtp"
+							? " Email is sent through the mailbox’s SMTP settings."
+							: " Email isn’t set up yet (Amazon SES settings), so nothing is emailed until it is."
+				}`}
 			>
 				<Field name="notifyTo" label="Send notifications to" value={s.forms.notifyTo} type="email" hint="Leave empty to use info@stephenlegal.ng." />
 				<Field name="contactConfirmation" label="Contact form: thank-you message" value={s.forms.contactConfirmation} />
