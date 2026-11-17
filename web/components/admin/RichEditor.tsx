@@ -4,7 +4,8 @@ import Image from "@tiptap/extension-image";
 import { TableKit } from "@tiptap/extension-table";
 import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { AnalysisHighlight, applyHighlights, HIGHLIGHT_EVENT, type HighlightDetail } from "./analysisHighlight";
 import { MediaPicker, type PickedMedia } from "./MediaPicker";
 
 type Props = { id: string; initialHtml: string; onChange: (html: string) => void; labelledBy: string };
@@ -18,6 +19,7 @@ export function RichEditor({ id, initialHtml, onChange, labelledBy }: Props) {
 			StarterKit.configure({ heading: { levels: [2, 3, 4] }, link: { openOnClick: false, autolink: true, defaultProtocol: "https" }, code: false, codeBlock: false }),
 			Image.configure({ inline: false }),
 			TableKit.configure({ table: { resizable: false } }),
+			AnalysisHighlight,
 		],
 		content: initialHtml,
 		immediatelyRender: false,
@@ -35,8 +37,21 @@ export function RichEditor({ id, initialHtml, onChange, labelledBy }: Props) {
 		setMode(next);
 	};
 
+	// The SEO & readability panel's eye buttons ask, through the form, for text to be shaded here.
+	const wrap = useRef<HTMLDivElement>(null);
+	useEffect(() => {
+		const form = wrap.current?.closest("form");
+		if (!form || !editor || mode !== "visual") return;
+		const onHighlight = (e: Event) => {
+			const { needles, scroll } = (e as CustomEvent<HighlightDetail>).detail;
+			applyHighlights(editor.view, needles, scroll);
+		};
+		form.addEventListener(HIGHLIGHT_EVENT, onHighlight);
+		return () => form.removeEventListener(HIGHLIGHT_EVENT, onHighlight);
+	}, [editor, mode]);
+
 	return (
-		<div className="adm-editor">
+		<div className="adm-editor" ref={wrap}>
 			<div className="adm-editor__bar">
 				{mode === "visual" && editor ? <Toolbar editor={editor} /> : <span className="adm-hint">Editing HTML. Unsupported tags are removed when you save.</span>}
 				<div className="adm-seg" role="group" aria-label="Editor view">

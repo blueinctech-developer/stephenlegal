@@ -186,6 +186,27 @@ details[open] > summary { margin-bottom: var(--s-3); }
 .adm-prose .selectedCell { background: #fff2cc; }
 .adm-editor__html { display: block; width: 100%; min-height: 24rem !important; border: 0 !important; font-family: ui-monospace, Consolas, monospace !important; font-size: 0.875rem !important; line-height: 1.6; padding: var(--s-4) !important; }
 
+/* SEO & readability panel (Yoast analysis) and the text its eye buttons shade in the article. */
+.adm-analysis { display: grid; gap: var(--s-3); }
+.adm-analysis h2 { margin: 0; }
+.adm-analysis__tabs { display: grid; grid-template-columns: 1fr 1fr; border: 1.5px solid var(--c-ink); }
+.adm-analysis__tabs button { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2); background: var(--c-white); border: 0; color: var(--c-ink); font: inherit; font-weight: 600; font-size: var(--fs-sm); cursor: pointer; }
+.adm-analysis__tabs button[aria-selected="true"] { background: var(--c-ink); color: var(--c-white); }
+.adm-analysis__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s-3); max-height: 28rem; overflow-y: auto; font-size: var(--fs-sm); line-height: 1.45; }
+.adm-analysis__list li { display: flex; align-items: flex-start; gap: var(--s-2); }
+.adm-analysis__text { flex: 1; min-width: 0; }
+.adm-analysis__text a { text-decoration: underline; }
+/* Yoast's traffic lights; the rating is also given in words for screen readers. */
+.adm-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; margin-top: 0.3em; background: #a7aab0; }
+.adm-analysis__tabs .adm-dot { margin-top: 0; }
+.adm-dot--good { background: #7ad03a; }
+.adm-dot--ok { background: #ee7c1b; }
+.adm-dot--bad { background: #dc3232; }
+.adm-eye { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--c-rule-strong); background: var(--c-white); color: var(--c-ink); cursor: pointer; margin-top: -4px; }
+.adm-eye:hover { background: var(--c-paper); }
+.adm-eye[aria-pressed="true"] { background: var(--c-ink); border-color: var(--c-ink); color: var(--c-white); }
+.adm-analysis-mark { background: #fde68a; box-shadow: 0 0 0 1px #fcd34d; border-radius: 2px; }
+
 /* ---------- Sign-in ---------- */
 .adm-auth { min-height: 100vh; display: grid; place-items: center; padding: var(--s-5); background: var(--c-night); }
 .adm-auth__card { width: min(26rem, 100%); background: var(--c-white); padding: var(--s-6); border-top: 6px solid var(--c-accent); display: grid; gap: var(--s-4); }
