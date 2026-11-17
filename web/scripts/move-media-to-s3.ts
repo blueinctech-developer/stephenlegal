@@ -17,6 +17,8 @@ const args = new Set(process.argv.slice(2));
 const APPLY = args.has("--apply");
 const SETUP = args.has("--setup-bucket");
 const BLOB = /^https:\/\/[^/]+\.public\.blob\.vercel-storage\.com/;
+/** The same address anywhere in a text (article HTML, settings), not only at the start. */
+const BLOB_ANYWHERE = "https://[^/]+\\.public\\.blob\\.vercel-storage\\.com/";
 
 if (!s3Configured()) {
 	console.error("Set S3_REGION, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY and S3_MEDIA_BUCKET in .env.local first.");
@@ -56,11 +58,15 @@ if (SETUP) {
 const sql = connect();
 const rows = await sql<{ id: number; url: string; mime: string }[]>`select id, url, mime from media where url ~ ${BLOB.source} order by id`;
 const origins = [...new Set(rows.map((r) => r.url.match(BLOB)![0]))];
-const [{ posts }] = await sql<{ posts: number }[]>`select count(*)::int as posts from posts where ${origins.length ? sql`content ~ ${BLOB.source} or excerpt ~ ${BLOB.source}` : sql`false`}`;
-const [{ authors }] = await sql<{ authors: number }[]>`select count(*)::int as authors from authors where avatar_url ~ ${BLOB.source}`;
-const [{ settings }] = await sql<{ settings: number }[]>`select count(*)::int as settings from settings where value::text ~ ${BLOB.source}`;
-console.log(`Vercel Blob → ${base}`);
+const [{ posts }] = await sql<{ posts: number }[]>`select count(*)::int as posts from posts where content ~ ${BLOB_ANYWHERE} or excerpt ~ ${BLOB_ANYWHERE}`;
+const [{ authors }] = await sql<{ authors: number }[]>`select count(*)::int as authors from authors where avatar_url ~ ${BLOB_ANYWHERE}`;
+const [{ settings }] = await sql<{ settings: number }[]>`select count(*)::int as settings from settings where value::text ~ ${BLOB_ANYWHERE}`;
+// Links in articles to Blob hosts that no media row names would be missed by the switch below.
+const strays = await sql<{ host: string }[]>`select distinct substring(content from ${"(https://[^/]+\\.public\\.blob\\.vercel-storage\\.com)/"}) as host from posts where content ~ ${BLOB_ANYWHERE}`;
+const unknown = strays.map((s) => s.host).filter((h) => h && !origins.includes(h));
+console.log(`Vercel Blob (${origins.join(", ")}) → ${base}`);
 console.log(`${rows.length} files to copy; links to change in ${posts} articles/pages, ${authors} authors, ${settings} settings.`);
+if (unknown.length) console.log(`Warning: articles also link to other Blob stores not in the media library: ${unknown.join(", ")}`);
 if (!APPLY) {
 	console.log("Report only. Run with --apply to copy and switch.");
 	await sql.end();
@@ -75,18 +81,25 @@ async function worker() {
 	while (next < rows.length) {
 		const r = rows[next++];
 		const objectKey = new URL(r.url).pathname.replace(/^\/+/, "");
-		try {
-			const res = await fetch(r.url);
-			if (!res.ok) throw new Error(`download HTTP ${res.status}`);
-			const body = Buffer.from(await res.arrayBuffer());
-			const url = await putS3Object(objectKey, body, res.headers.get("content-type")?.split(";")[0] || r.mime);
-			const check = await fetch(url, { method: "HEAD" });
-			if (!check.ok) throw new Error(`new address HTTP ${check.status}`);
-			copied++;
-			if (copied % 50 === 0) console.log(`  ${copied} / ${rows.length} copied…`);
-		} catch (e) {
-			failed.push(`${r.url}: ${(e as Error).message}`);
+		let lastError = "";
+		// Downloads sometimes drop mid-transfer; each file gets a few tries.
+		for (let attempt = 1; attempt <= 4; attempt++) {
+			try {
+				const res = await fetch(r.url);
+				if (!res.ok) throw new Error(`download HTTP ${res.status}`);
+				const body = Buffer.from(await res.arrayBuffer());
+				const url = await putS3Object(objectKey, body, res.headers.get("content-type")?.split(";")[0] || r.mime);
+				const check = await fetch(url, { method: "HEAD" });
+				if (!check.ok) throw new Error(`new address HTTP ${check.status}`);
+				lastError = "";
+				break;
+			} catch (e) {
+				lastError = (e as Error).message;
+				await new Promise((s) => setTimeout(s, 2000 * attempt));
+			}
 		}
+		if (lastError) failed.push(`${r.url}: ${lastError}`);
+		else if (++copied % 50 === 0) console.log(`  ${copied} / ${rows.length} copied…`);
 	}
 }
 await Promise.all(Array.from({ length: 6 }, worker));
