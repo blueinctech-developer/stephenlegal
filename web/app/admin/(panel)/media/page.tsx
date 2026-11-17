@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { storageStatus } from "@/lib/storage";
 import { MediaLibrary } from "./MediaLibrary";
 
 export default async function MediaPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
@@ -14,6 +15,11 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
 		order by created_at desc, id desc limit ${perPage} offset ${(page - 1) * perPage}`;
 	const total = rows.length ? Number(rows[0].total) : 0;
 	const missingAlt = rows.filter((r) => r.mime.startsWith("image/") && !r.alt).length;
+	const storage = storageStatus();
+	const storedIn =
+		storage.store === "s3"
+			? `New uploads are stored in Amazon S3 (${storage.bucket}).`
+			: `New uploads are stored in ${storage.store === "blob" ? "Vercel Blob" : "this computer’s .data folder"}. To use Amazon S3, add ${storage.missingS3.join(", ")} in the hosting settings and redeploy.`;
 
 	return (
 		<main className="adm-page">
@@ -32,6 +38,7 @@ export default async function MediaPage({ searchParams }: { searchParams: Promis
 			<p className="adm-hint" role="status">
 				{total.toLocaleString("en-GB")} files{missingAlt > 0 && ` · ${missingAlt} on this page need a description for screen-reader users`}
 			</p>
+			<p className="adm-hint">{storedIn}</p>
 			<MediaLibrary
 				items={rows.map((r) => ({
 					id: r.id,
