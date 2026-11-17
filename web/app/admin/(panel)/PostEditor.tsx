@@ -4,6 +4,7 @@ import Link from "next/link";
 import { startTransition, useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { MediaPicker, type PickedMedia } from "@/components/admin/MediaPicker";
 import { ConfirmButton } from "@/components/admin/ConfirmButton";
+import { ContentAnalysis } from "@/components/admin/ContentAnalysis";
 import { RichEditor } from "@/components/admin/RichEditor";
 import { toLagosInput, toSlug } from "@/lib/admin-format";
 import { deletePost, savePost, type SaveState } from "./content-actions";
@@ -21,6 +22,7 @@ export type EditorPost = {
 	featured: PickedMedia | null;
 	seoTitle: string;
 	seoDescription: string;
+	focusKeyphrase: string;
 	sticky: boolean;
 	categoryIds: number[];
 	tags: string[];
@@ -101,7 +103,8 @@ export function PostEditor({ post, categories, authors, justSaved }: { post: Edi
 			<input type="hidden" name="id" value={post.id ?? ""} />
 			<input type="hidden" name="type" value={post.type} />
 			<input type="hidden" name="content" value={content} />
-			<input type="hidden" name="featured_media_id" value={featured?.id ?? ""} />
+			{/* The image's address and description are read by the SEO analysis's image checks. */}
+			<input type="hidden" name="featured_media_id" value={featured?.id ?? ""} data-url={featured?.url ?? ""} data-alt={featured?.alt ?? ""} />
 
 			<div className="adm-edit__main">
 				<p className="adm-crumb">
@@ -245,6 +248,8 @@ export function PostEditor({ post, categories, authors, justSaved }: { post: Edi
 					</div>
 					<p className="adm-hint">{dirty ? "Unsaved changes. Ctrl+S saves." : "Ctrl+S saves."}</p>
 				</section>
+
+				<ContentAnalysis initialKeyphrase={post.focusKeyphrase} />
 
 				{post.type === "post" && (
 					<>

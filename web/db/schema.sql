@@ -104,6 +104,9 @@ create table if not exists submissions (
 -- Reader view counts, carried over from the theme's counter (_empath_views_count).
 alter table posts add column if not exists views integer not null default 0;
 
+-- The search phrase an article is written for (Yoast's "focus keyphrase"), used by the editor's SEO analysis.
+alter table posts add column if not exists focus_keyphrase text not null default '';
+
 -- Enquiry handling: a status, private notes, and when they last changed.
 alter table submissions add column if not exists status text not null default 'new';
 alter table submissions add column if not exists notes text not null default '';

@@ -25,6 +25,7 @@ export async function loadEditor(type: "post" | "page", id: number | null) {
 			featured: null,
 			seoTitle: "",
 			seoDescription: "",
+			focusKeyphrase: "",
 			sticky: false,
 			categoryIds: [],
 			tags: [],
@@ -45,6 +46,7 @@ export async function loadEditor(type: "post" | "page", id: number | null) {
 			author_id: number | null;
 			seo_title: string;
 			seo_description: string;
+			focus_keyphrase: string;
 			sticky: boolean;
 			m_id: number | null;
 			m_url: string | null;
@@ -72,6 +74,7 @@ export async function loadEditor(type: "post" | "page", id: number | null) {
 		featured: p.m_id ? { id: p.m_id, url: p.m_url!, alt: p.m_alt ?? "", width: p.m_width, height: p.m_height } : null,
 		seoTitle: p.seo_title,
 		seoDescription: p.seo_description,
+		focusKeyphrase: p.focus_keyphrase ?? "",
 		sticky: p.sticky,
 		categoryIds: terms.filter((t) => t.taxonomy === "category").map((t) => t.id),
 		tags: terms.filter((t) => t.taxonomy === "tag").map((t) => t.name),

@@ -47,6 +47,7 @@ export async function savePost(_prev: SaveState, form: FormData): Promise<SaveSt
 	const excerpt = str(form, "excerpt", 600);
 	const seoTitle = str(form, "seo_title", 120);
 	const seoDescription = str(form, "seo_description", 300);
+	const focusKeyphrase = str(form, "focus_keyphrase", 120);
 	const authorId = Number(form.get("author_id")) || null;
 	const featuredId = Number(form.get("featured_media_id")) || null;
 	const sticky = type === "post" && form.get("sticky") === "on";
@@ -65,6 +66,7 @@ export async function savePost(_prev: SaveState, form: FormData): Promise<SaveSt
 		featured_media_id: featuredId,
 		seo_title: seoTitle,
 		seo_description: seoDescription,
+		focus_keyphrase: focusKeyphrase,
 		sticky,
 	};
 
