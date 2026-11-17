@@ -58,8 +58,6 @@ export function cleanArticleHtml(raw: string, opts: CleanOptions = {}): string {
 		exclusiveFilter: (frame) =>
 			(frame.tag === "img" && !frame.attribs.src) ||
 			(frame.tag === "iframe" && !frame.attribs.src) ||
-			// Empty paragraphs and headings left behind by page builders.
-			(["p", "h2", "h3", "h4", "h5", "h6", "li", "figure"].includes(frame.tag) && !frame.text.trim() && !frame.mediaChildren.length) ||
 			// Leftover note from the old form plugin.
 			(frame.tag === "p" && /^"\*" indicates required fields$/.test(frame.text.trim())),
 	});
@@ -68,11 +66,31 @@ export function cleanArticleHtml(raw: string, opts: CleanOptions = {}): string {
 	// no <pre> blocks) and put each block element on its own line.
 	const open = new RegExp(String.raw`\s*(<(?:${BLOCK_TAGS.join("|")})(?:\s[^>]*)?\/?>)\s*`, "g");
 	const close = new RegExp(String.raw`\s*(</(?:${BLOCK_TAGS.join("|")})>)\s*`, "g");
-	return html
+	return dropEmptyBlocks(html)
 		.replace(/\s+/g, " ")
 		.replace(open, "\n$1")
 		.replace(close, "$1\n")
 		.replace(/\n\s*/g, "\n")
 		.trim();
+}
+
+/**
+ * Removes paragraphs, headings, list items and figures left empty by page builders.
+ * Done after sanitising rather than in exclusiveFilter, because sanitize-html only
+ * counts an image as a child of its direct parent: WordPress's
+ * <p><span><img></span></p> and <p><a><img></a></p> would otherwise lose the image.
+ */
+const INNERMOST_BLOCK = /<(p|h[2-6]|li|figure)>((?:(?!<\1[\s>])[\s\S])*?)<\/\1>/g;
+function dropEmptyBlocks(html: string): string {
+	let prev: string;
+	do {
+		prev = html;
+		html = html.replace(INNERMOST_BLOCK, (whole, _tag: string, inner: string) => {
+			if (/<(img|iframe)\b/i.test(inner)) return whole;
+			const text = inner.replace(/<[^>]*>/g, "").replace(/&nbsp;|&#160;| |\s/g, "");
+			return text ? whole : "";
+		});
+	} while (html !== prev);
+	return html;
 }
 
