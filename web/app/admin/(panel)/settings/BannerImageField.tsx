@@ -12,7 +12,7 @@ export function BannerImageField({ value }: { value: string }) {
 			<span className="adm-label">Banner image</span>
 			<input type="hidden" name="bannerImage" value={url} />
 			{url ? (
-				<figure className="adm-featured">
+				<figure className="adm-featured adm-featured--whole">
 					{/* eslint-disable-next-line @next/next/no-img-element -- admin preview */}
 					<img src={url} alt="Current banner" />
 				</figure>
