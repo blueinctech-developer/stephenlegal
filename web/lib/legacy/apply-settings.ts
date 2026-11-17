@@ -1,10 +1,10 @@
 /**
  * Puts the admin's site settings into the original theme's markup: header menu,
- * social links, side-panel and footer contact details, copyright. A setting still
+ * social links, side-panel and footer contact details, copyright, sidebar adverts. A setting still
  * at its default leaves the markup exactly as it was copied from WordPress.
  * No database access here, so tests can load it.
  */
-import { DEFAULT_SETTINGS, type MenuItem, type SiteSettings } from "../site-settings.ts";
+import { adsenseOn, DEFAULT_SETTINGS, type MenuItem, type SiteSettings } from "../site-settings.ts";
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
@@ -75,5 +75,31 @@ export function applySettings(html: string, s: SiteSettings): string {
 	out = swap(out, d.footer.phone, s.footer.phone);
 	out = swap(out, d.footer.copyright, s.footer.copyright);
 	if (s.footer.email !== d.footer.email) out = out.replace(/(<strong>Email Us:<\/strong><\/span>\s*<span[^>]*>)[^<]*/g, `$1${esc(s.footer.email)}`);
+	return applyAds(out, s.ads);
+}
+
+/**
+ * The article sidebar's two adverts, in the widgets they occupied on WordPress: the AdSense
+ * unit (Custom HTML widget) and the image banner. The AdSense unit stays empty until the
+ * article page loads Google's script, which happens only on the real domain.
+ */
+export function applyAds(html: string, ads: SiteSettings["ads"]): string {
+	let out = html.replace(
+		/(<div id="custom_html-3"[^>]*><div class="textwidget custom-html-widget">)[\s\S]*?(<\/div><\/div>)/,
+		(_m, open: string, close: string) =>
+			adsenseOn(ads)
+				? `${open}<ins class="adsbygoogle" style="display:block" data-ad-client="${esc(ads.adsenseClient)}" data-ad-slot="${esc(ads.adsenseSlot)}" data-ad-format="auto" data-full-width-responsive="true"></ins>${close}`
+				: `${open}\n${close}`,
+	);
+	const banner = /<div id="media_image-1"[^>]*>[\s\S]*?<\/div>/;
+	if (!ads.bannerEnabled || !ads.bannerImage) return out.replace(banner, "");
+	const d = DEFAULT_SETTINGS.ads;
+	if (ads.bannerImage !== d.bannerImage || ads.bannerLink !== d.bannerLink) {
+		const external = /^https?:\/\//i.test(ads.bannerLink);
+		out = out.replace(
+			banner,
+			`<div id="media_image-1" class="empath__sidebar-item widget_media_image"><a href="${esc(ads.bannerLink || "#")}"${external ? ' target="_blank" rel="noopener sponsored"' : ""}><img src="${esc(ads.bannerImage)}" class="image attachment-full size-full" alt="Advertisement" loading="lazy" style="max-width: 100%; height: auto;" /></a></div>`,
+		);
+	}
 	return out;
 }

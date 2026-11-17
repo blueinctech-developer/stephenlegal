@@ -66,3 +66,31 @@ test("each form carries its thank-you message from the settings", () => {
 	const html = wireForms(`<form method='post' id='gform_3' action='/'><input name='input_2'></form>`, { newsletter: "Thanks, you're on the list!" });
 	assert.match(html, /data-confirmation='Thanks, you&#39;re on the list!'/);
 });
+
+const sidebar = `<div id="custom_html-3" class="widget_text empath__sidebar-item widget_custom_html"><div class="textwidget custom-html-widget">
+</div></div><div id="media_image-1" class="empath__sidebar-item widget_media_image"><a href="#"><img width="992" height="1056" src="/legacy/wp-content/uploads/2025/10/LAW-AD.jpg" class="image" alt="" /></a></div>`;
+
+test("default ad settings put the AdSense unit in the sidebar and keep the WordPress banner as copied", () => {
+	const out = applySettings(sidebar, structuredClone(DEFAULT_SETTINGS));
+	assert.match(out, /<div class="textwidget custom-html-widget"><ins class="adsbygoogle"[^>]*data-ad-client="ca-pub-9728842251129504" data-ad-slot="4484731570"/);
+	assert.ok(out.endsWith(sidebar.slice(sidebar.indexOf('<div id="media_image-1"'))), "banner markup untouched");
+});
+
+test("ad settings can switch AdSense off, change the banner, or hide it", () => {
+	const s = structuredClone(DEFAULT_SETTINGS);
+	s.ads.adsenseEnabled = false;
+	s.ads.bannerImage = "https://blob.example/ad.png";
+	s.ads.bannerLink = "https://advertiser.example/?a=1&b=2";
+	let out = applySettings(sidebar, s);
+	assert.doesNotMatch(out, /adsbygoogle/);
+	assert.match(out, /<a href="https:\/\/advertiser\.example\/\?a=1&amp;b=2" target="_blank" rel="noopener sponsored"><img src="https:\/\/blob\.example\/ad\.png"/);
+	s.ads.bannerEnabled = false;
+	out = applySettings(sidebar, s);
+	assert.doesNotMatch(out, /media_image-1/);
+});
+
+test("an AdSense unit with an invalid ID is left out rather than printed", () => {
+	const s = structuredClone(DEFAULT_SETTINGS);
+	s.ads.adsenseClient = 'ca-pub-1"><script>';
+	assert.doesNotMatch(applySettings(sidebar, s), /adsbygoogle|<script>/);
+});

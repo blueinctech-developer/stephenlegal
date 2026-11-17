@@ -8,6 +8,9 @@ const trimSlash = (url: string) => url.replace(/\/+$/, "");
 /** The public URL of this site, used for canonicals, sitemaps and feeds. */
 export const SITE_URL = trimSlash(process.env.NEXT_PUBLIC_SITE_URL || "https://stephenlegal.ng");
 
+/** Only the real domain is indexed and shows ads; previews and test copies do neither. */
+export const IS_PUBLIC_SITE = new URL(SITE_URL).hostname === "stephenlegal.ng";
+
 export const SITE_NAME = "Stephen Legal";
 
 /** The publication's tagline, as it read on the old site. */

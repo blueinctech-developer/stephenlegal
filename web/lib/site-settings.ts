@@ -22,6 +22,22 @@ export type SiteSettings = {
 		/** The automatic reply the Contact form sends to the visitor ({name} is replaced). */
 		autoReply: { enabled: boolean; subject: string; body: string };
 	};
+	/** Advertising on article pages, in the sidebar as on WordPress. Never shown on previews. */
+	ads: {
+		/** Google AdSense unit in the sidebar's Custom HTML widget. */
+		adsenseEnabled: boolean;
+		/** Publisher ID, "ca-pub-" and digits. */
+		adsenseClient: string;
+		/** The ad unit's slot number. */
+		adsenseSlot: string;
+		/** Served at /ads.txt; empty means no file. */
+		adsTxt: string;
+		/** The image advert under it ("LAW-AD" on WordPress). */
+		bannerEnabled: boolean;
+		bannerImage: string;
+		/** Where the banner leads; # for nowhere. */
+		bannerLink: string;
+	};
 };
 
 const cat = (label: string, slug: string): MenuItem => ({ label, href: `/category/${slug}/` });
@@ -74,7 +90,23 @@ export const DEFAULT_SETTINGS: SiteSettings = {
 			body: "Hi there {name},\n\nThank you for getting in touch. We have received your inquiry and will get back to you within one business day.",
 		},
 	},
+	// The WordPress sidebar: the "Legal Info SLB" AdSense widget and the LAW-AD image widget; and its ads.txt.
+	ads: {
+		adsenseEnabled: true,
+		adsenseClient: "ca-pub-9728842251129504",
+		adsenseSlot: "4484731570",
+		adsTxt: "google.com, pub-9728842251129504, DIRECT, f08c47fec0942fa0",
+		bannerEnabled: true,
+		bannerImage: "/legacy/wp-content/uploads/2025/10/LAW-AD.jpg",
+		bannerLink: "#",
+	},
 };
+
+export const ADSENSE_CLIENT = /^ca-pub-\d{10,20}$/;
+export const ADSENSE_SLOT = /^\d{5,20}$/;
+
+/** True when the article sidebar should carry a working AdSense unit. */
+export const adsenseOn = (ads: SiteSettings["ads"]) => ads.adsenseEnabled && ADSENSE_CLIENT.test(ads.adsenseClient) && ADSENSE_SLOT.test(ads.adsenseSlot);
 
 export type SettingKey = keyof SiteSettings;
 export const SETTING_KEYS = Object.keys(DEFAULT_SETTINGS) as SettingKey[];
