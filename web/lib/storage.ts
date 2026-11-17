@@ -16,7 +16,15 @@ import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client
 export const LOCAL_UPLOADS = path.resolve(process.cwd(), ".data", "uploads");
 const blobConfigured = () => Boolean(process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN);
 
-export const s3Configured = () => Boolean(process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY && process.env.S3_MEDIA_BUCKET);
+const S3_SETTINGS = ["S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY", "S3_MEDIA_BUCKET"] as const;
+export const s3Configured = () => S3_SETTINGS.every((name) => Boolean(process.env[name]));
+
+/** Where new uploads go, and which S3 settings are missing (names only, never values), for Admin → Media. */
+export function storageStatus(): { store: "s3" | "blob" | "local"; bucket?: string; missingS3: string[] } {
+	const missingS3 = S3_SETTINGS.filter((name) => !process.env[name]);
+	if (!missingS3.length) return { store: "s3", bucket: process.env.S3_MEDIA_BUCKET, missingS3 };
+	return { store: blobConfigured() ? "blob" : "local", missingS3 };
+}
 
 /** Public address of the media bucket, without a trailing slash. */
 export function mediaBaseUrl(): string {
